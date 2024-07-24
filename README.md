@@ -4,15 +4,15 @@ This is a Go command line program that will allow listing and interacting with a
 
 ## ptls 
 
-Ptls is a ls-like tool that can display the contents of the Pairtree object. The basic command is `ptls [ID]` (when an ENV PAIRTREE_ROOT is set) or `ptls [PT_ROOT] [ID]` with the output listing the contents of the Pairtree object directory. This pattern holds with all options of `ptls` except `ptls -h`. This command also supports trailing wildcards such as `ptls ark:/53355/cy88*`.
+Ptls is a ls-like tool that can display the contents of the Pairtree object. The basic command is `ptls [ID]` (when an ENV PAIRTREE_ROOT is set) or `ptls [PT_ROOT] [ID]` with the output listing the contents of the Pairtree object directory. This pattern holds with all options of `ptls` except `ptls -h`. This command also supports trailing wildcards such as `ptls ark:/53355/cy88*`. To allow for trailing wildcards, the `[ID]` must be in quotes. 
 
 The basic command is  
 
-    ptls [ID]
+    ptls "[ID]"
 
 or when the ENV PAIRTREE_ROOT is not set 
 
-    ptls [PT_ROOT] [ID]
+    ptls [PT_ROOT] "[ID]"
 
 For ptls help run 
 
