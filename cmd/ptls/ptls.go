@@ -1,24 +1,24 @@
 package ptls
 
-/*ptls: an ls-like tool that can display the contents of the Pairtree object; options should
+/*ptls: an ls-like tool that can display the contents of the Pairtree object; options 
 include: -a (but have this work like ls' -A which does include the . and .. directories in the
 output), -d (which only lists directories of the object directory), -j (which returns output in a
 JSON structure instead of basic string output), and -R (for a recursive listing of the object directory,
-with the default being a non-recursive listing). The basic command should be: ptls [ID]
+with the default being a non-recursive listing). The basic command is ptls [ID]
 (when an ENV PAIRTREE_ROOT is set) or ptls [PT_ROOT] [ID]) with the output listing the contents of
 the Pairtree object directory (doing all the navigation through the Pairtree structure behind the scenes).
-This command (ptls) should also support trailing wildcards (not preceding wildcards), so things like:
-ptls ark:/53355/cy88* should return the directories of multiple Pairtree objects (if multiples exist
-	in the Pairtree). It should also support -h for details about what it can do.*/
+It also supports -h for details about what it can do.*/
 
 // Just one ID
 import (
-	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
+	"path/filepath"
 
-	"github.com/UCLALibrary/pt-tools/pkg/pt"
+	error_msgs "github.com/UCLALibrary/pt-tools/pkg/error-msgs"
+	"github.com/UCLALibrary/pt-tools/pkg/pairtree"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -41,35 +41,6 @@ var (
 	logFile      string      = "logs.log"
 	id           string      = ""
 )
-
-var rootCmd = &cobra.Command{
-	Use:   "ptls [PT_ROOT] [ID]",
-	Short: "ptls is a tool to list Pairtree object directories.",
-	Long:  "A tool to list contents of Pairtree object directories with various options.",
-	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) < 2 {
-			fmt.Println("Please provide an ID for the pairtree")
-			os.Exit(1)
-		}
-		// Extract the ID from the final argument
-		id = args[len(args)-1]
-
-		// If the root has not been set yet check the ENV vars
-		if ptRoot == "" {
-
-			if envVar := os.Getenv("PAIRTREE_ROOT"); envVar != "" {
-				ptRoot = envVar
-			} else {
-				fmt.Println(errors.New("--Root flag or PAIRTREE_ROOT environment variable must be set"))
-				os.Exit(1)
-			}
-		}
-
-		Logger.Info("Pairtree root is",
-			zap.String("PAIRTREE_ROOT", ptRoot),
-		)
-	},
-}
 
 // ApplyExitOnHelp exits out of program if --help is flag
 func ApplyExitOnHelp(c *cobra.Command, exitCode int) {
@@ -110,52 +81,99 @@ func logger() *zap.Logger {
 	return logger
 }
 
-func init() {
-	rootCmd.Flags().BoolVarP(&showAll, "a", "a", false, "do not ignore entries starting with .")
-	rootCmd.Flags().BoolVarP(&showDirsOnly, "d", "d", false, "list directories only")
-	rootCmd.Flags().BoolVarP(&outputJSON, "j", "j", false, "output in JSON format")
-	rootCmd.Flags().BoolVarP(&recursive, "r", "r", false, "list directories recursively")
-	rootCmd.Flags().StringVarP(&ptRoot, "Root", "R", "", "Set root directory")
+func initFlags(cmd *cobra.Command) {
+	cmd.Flags().BoolVarP(&showAll, "a", "a", false, "do not ignore entries starting with .")
+	cmd.Flags().BoolVarP(&showDirsOnly, "d", "d", false, "list directories only")
+	cmd.Flags().BoolVarP(&outputJSON, "j", "j", false, "output in JSON format")
+	cmd.Flags().BoolVarP(&recursive, "r", "r", false, "list directories recursively")
+	cmd.Flags().StringVarP(&ptRoot, "Root", "R", "", "Set root directory")
 
 }
 
-func Run() error {
+func Run(args []string, writer io.Writer) error {
 	var ptMap map[string][]fs.DirEntry
 	var err error
 	var pairPath string
+
+	var rootCmd = &cobra.Command{
+		Use:   "ptls [PT_ROOT] [FLAGS] [ID]",
+		Short: "ptls is a tool to list Pairtree object directories.",
+		Long:  "A tool to list contents of Pairtree object directories with various options.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) < 1 {
+				fmt.Fprintln(writer, "Please provide an ID for the pairtree")
+				Logger.Error("Error getting ID",
+					zap.Error(error_msgs.Err6))
+
+				return error_msgs.Err6
+			}
+			// Extract the ID from the final argument
+			id = args[len(args)-1]
+
+			// If the root has not been set yet check the ENV vars
+			if ptRoot == "" {
+
+				if envVar := os.Getenv("PAIRTREE_ROOT"); envVar != "" {
+					ptRoot = envVar
+				} else {
+					fmt.Fprintln(writer, error_msgs.Err7)
+					return error_msgs.Err7
+				}
+			}
+
+			Logger.Info("Pairtree root is",
+				zap.String("PAIRTREE_ROOT", ptRoot),
+			)
+			return nil
+		},
+	}
+
+	initFlags(rootCmd)
+	rootCmd.SetOut(writer)
+	rootCmd.SetErr(writer)
+	rootCmd.SetArgs(args)
 
 	ApplyExitOnHelp(rootCmd, 0)
 
 	if err = rootCmd.Execute(); err != nil {
 		Logger.Error("Error setting command line",
 			zap.Error(err))
-		os.Exit(1)
+		return err
 	}
 
-	pairPath, err = pt.CreatePP(id, ptRoot)
+	// check if the pairtree version file exists and is populated
+	if err := pairtree.CheckPTVer(ptRoot); err != nil {
+		Logger.Error("Error with pairtree veresion file", zap.Error(err))
+		return err
+	}
+
+	// Get the prefix from pairtree_prefix file
+	prefix, err := pairtree.GetPrefix(ptRoot)
+
+	if err != nil {
+		Logger.Error("Error retrieving prefix from pairtree_prefix file", zap.Error(err))
+		return err
+	}
+
+	// create the pairpath
+	pairPath, err = pairtree.CreatePP(id, ptRoot, prefix)
 
 	if err != nil {
 		Logger.Error("Error creating pairpath", zap.Error(err))
-		os.Exit(1)
-	}
-
-	// Check if the pairtree version file exists and is populated
-	if err := pt.CheckPTVer(ptRoot); err != nil {
-		Logger.Error("Error with pairtree veresion file", zap.Error(err))
-		os.Exit(1)
+		return err
 	}
 
 	if recursive {
-		ptMap, err = pt.RecursiveFiles(pairPath, id)
+		ptMap, err = pairtree.RecursiveFiles(pairPath, id)
 		if err != nil {
 			Logger.Error("Error retrieving list of files recursively", zap.Error(err))
-			os.Exit(1)
+			return err
 		}
 	} else {
-		ptMap, err = pt.NonRecursiveFiles(pairPath)
+		ptMap, err = pairtree.NonRecursiveFiles(pairPath)
 		if err != nil {
 			Logger.Error("Error retrieving list of files recursively", zap.Error(err))
-			os.Exit(1)
+			return err
 		}
 	}
 
@@ -164,7 +182,7 @@ func Run() error {
 		for key, entries := range ptMap {
 			var filteredEntries []fs.DirEntry
 			for _, entry := range entries {
-				if pt.IsDirectory(entry) {
+				if pairtree.IsDirectory(entry) {
 					filteredEntries = append(filteredEntries, entry)
 				}
 			}
@@ -176,15 +194,25 @@ func Run() error {
 		}
 	}
 
-	// If hidden files and dir should be removed from map
+	// If hidden files and directories should be removed from the map
 	if !showAll {
 		for key, entries := range ptMap {
+			// Check if the key (directory name) is hidden
+			if pairtree.IsHidden(filepath.Base(key)) {
+				// If the key is hidden, remove it from the map
+				delete(ptMap, key)
+				continue
+			}
+
+			// Filter out hidden entries within the directory
 			var filteredEntries []fs.DirEntry
 			for _, entry := range entries {
-				if !pt.IsHidden(entry.Name()) {
+				if !pairtree.IsHidden(entry.Name()) {
 					filteredEntries = append(filteredEntries, entry)
 				}
 			}
+
+			// Update the map with filtered entries or remove the key if no entries remain
 			if len(filteredEntries) > 0 {
 				ptMap[key] = filteredEntries
 			} else {
@@ -194,25 +222,26 @@ func Run() error {
 	}
 
 	if outputJSON {
-		recursiveJSON, err := pt.ToJSONStructure(pairPath, ptMap)
+		dirTree := pairtree.BuildDirectoryTree(pairPath, ptMap, true)
+
+		recursiveJSON, err := pairtree.ToJSONStructure(pairPath, dirTree)
 		if err != nil {
 			Logger.Error("Error converting to Json", zap.Error(err))
-			os.Exit(1)
+			return err
 		}
-		fmt.Printf("Recursive JSON structure:\n%s\n", string(recursiveJSON))
+		fmt.Fprintf(writer, "JSON structure:\n%s\n", string(recursiveJSON))
 	} else {
 
 		// Display the directory structure
 		for dir, entries := range ptMap {
-			fmt.Println(dir + ":")
+			fmt.Fprintln(writer, dir+":")
 			for _, entry := range entries {
-				if pt.IsDirectory(entry) {
-					fmt.Printf("  %s/\n", entry.Name())
+				if pairtree.IsDirectory(entry) {
+					fmt.Fprintf(writer, "  %s/\n", entry.Name())
 				} else {
-					fmt.Printf("  %s\n", entry.Name())
+					fmt.Fprintf(writer, "  %s\n", entry.Name())
 				}
 			}
-			fmt.Println()
 		}
 
 	}

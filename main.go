@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/UCLALibrary/pt-tools/cmd/ptls"
-	// Import other tools as needed
 )
 
 func main() {
@@ -15,14 +14,18 @@ func main() {
 	}
 
 	command := os.Args[1]
+	// Pass in os.Args excluding the general and specifc program name
+	args := os.Args[2:]
+
+	// Use os.Stdout for standard output
+	writer := os.Stdout
 
 	switch command {
 	case "ptls":
-		err := ptls.Run()
+		err := ptls.Run(args, writer)
 		if err != nil {
-			log.Fatal("Error running ptls:", err)
+			os.Exit(1)
 		}
-		// Add cases for other tools as needed
 	default:
 		log.Fatalf("Unknown command: %s", command)
 	}
