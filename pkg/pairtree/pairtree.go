@@ -31,8 +31,8 @@ type Directory struct {
 
 const (
 	rootDir   = "pairtree_root"
-	prefixDir = "pairtree_prefix/pairtree_prefix"
-	verDir    = "pairtree_version0_1/pairtree_version0_1"
+	prefixDir = "pairtree_prefix"
+	verDir    = "pairtree_version0_1"
 )
 
 // IsHidden determines if a file is hidden based on its name.

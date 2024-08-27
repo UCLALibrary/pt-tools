@@ -1,6 +1,6 @@
 package ptls
 
-/*ptls: an ls-like tool that can display the contents of the Pairtree object; options 
+/*ptls: an ls-like tool that can display the contents of the Pairtree object; options
 include: -a (but have this work like ls' -A which does include the . and .. directories in the
 output), -d (which only lists directories of the object directory), -j (which returns output in a
 JSON structure instead of basic string output), and -R (for a recursive listing of the object directory,
@@ -86,7 +86,7 @@ func initFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&showDirsOnly, "d", "d", false, "list directories only")
 	cmd.Flags().BoolVarP(&outputJSON, "j", "j", false, "output in JSON format")
 	cmd.Flags().BoolVarP(&recursive, "r", "r", false, "list directories recursively")
-	cmd.Flags().StringVarP(&ptRoot, "Root", "R", "", "Set root directory")
+	cmd.Flags().StringVarP(&ptRoot, "pairtree", "p", "", "Set pairtree root directory")
 
 }
 

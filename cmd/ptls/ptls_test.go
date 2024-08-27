@@ -17,14 +17,16 @@ import (
 const (
 	testPairtree = "../../test-dir/test-pairtree"
 	testDir      = "test-pairtree"
-	root         = "--Root="
+	root         = "--pairtree="
 )
 
-// runTestWithArgs 
+// runTestWithArgs
 func runTestWithArgs(t *testing.T, args, expected []string) {
 	var buf bytes.Buffer
 
-	Run(args, &buf)
+	err := Run(args, &buf)
+
+	assert.NoError(t, err, "There was an error running ptls")
 
 	// Get the output
 	output := buf.String()
@@ -47,10 +49,9 @@ func TestNonRecursive(t *testing.T) {
 	}
 
 	// Create a logger instance using the registered sink.
-	logger, _ := testutils.CreateLogger()
-	defer logger.Sync()
+	logger, cleanup := testutils.SetupLogger(logFile)
+	defer cleanup()
 	Logger = logger
-	defer testutils.CleanupFiles(logFile)
 
 	for _, test := range tests {
 		t.Run(test.id, func(t *testing.T) {
@@ -79,10 +80,10 @@ func TestRecursive(t *testing.T) {
 	}
 
 	// Create a logger instance using the registered sink.
-	logger, _ := testutils.CreateLogger()
-	defer logger.Sync()
+	logger, cleanup := testutils.SetupLogger(logFile)
+	defer cleanup()
+
 	Logger = logger
-	defer testutils.CleanupFiles(logFile)
 
 	for _, test := range tests {
 		t.Run(test.id, func(t *testing.T) {
@@ -112,10 +113,9 @@ func TestDirOnly(t *testing.T) {
 	}
 
 	// Create a logger instance using the registered sink.
-	logger, _ := testutils.CreateLogger()
-	defer logger.Sync()
+	logger, cleanup := testutils.SetupLogger(logFile)
+	defer cleanup()
 	Logger = logger
-	defer testutils.CleanupFiles(logFile)
 
 	for _, test := range tests {
 		t.Run(test.id, func(t *testing.T) {
@@ -145,10 +145,9 @@ func TestShowAll(t *testing.T) {
 	}
 
 	// Create a logger instance using the registered sink.
-	logger, _ := testutils.CreateLogger()
-	defer logger.Sync()
+	logger, cleanup := testutils.SetupLogger(logFile)
+	defer cleanup()
 	Logger = logger
-	defer testutils.CleanupFiles(logFile)
 
 	for _, test := range tests {
 		t.Run(test.id, func(t *testing.T) {
@@ -175,10 +174,9 @@ func TestShowAllAndDironly(t *testing.T) {
 	}
 
 	// Create a logger instance using the registered sink.
-	logger, _ := testutils.CreateLogger()
-	defer logger.Sync()
+	logger, cleanup := testutils.SetupLogger(logFile)
+	defer cleanup()
 	Logger = logger
-	defer testutils.CleanupFiles(logFile)
 
 	for _, test := range tests {
 		t.Run(test.id, func(t *testing.T) {
@@ -203,10 +201,9 @@ func TestShowAllRecursive(t *testing.T) {
 	}
 
 	// Create a logger instance using the registered sink.
-	logger, _ := testutils.CreateLogger()
-	defer logger.Sync()
+	logger, cleanup := testutils.SetupLogger(logFile)
+	defer cleanup()
 	Logger = logger
-	defer testutils.CleanupFiles(logFile)
 
 	for _, test := range tests {
 		t.Run(test.id, func(t *testing.T) {
@@ -231,10 +228,9 @@ func TestDirOnlyRecursive(t *testing.T) {
 	}
 
 	// Create a logger instance using the registered sink.
-	logger, _ := testutils.CreateLogger()
-	defer logger.Sync()
+	logger, cleanup := testutils.SetupLogger(logFile)
+	defer cleanup()
 	Logger = logger
-	defer testutils.CleanupFiles(logFile)
 
 	for _, test := range tests {
 		t.Run(test.id, func(t *testing.T) {
@@ -260,10 +256,9 @@ func TestCLIError(t *testing.T) {
 	}
 
 	// Create a logger instance using the registered sink.
-	logger, _ := testutils.CreateLogger()
-	defer logger.Sync()
+	logger, cleanup := testutils.SetupLogger(logFile)
+	defer cleanup()
 	Logger = logger
-	defer testutils.CleanupFiles(logFile)
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

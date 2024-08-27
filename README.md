@@ -12,11 +12,11 @@ The basic command is
 
 or when the ENV PAIRTREE_ROOT is not set 
 
-    ptls --Root [PT_ROOT] "[ID]"
+    ptls --pairtree [PT_ROOT] "[ID]"
 
 or 
 
-    ptls --R [PT_ROOT] "[ID]"
+    ptls -p [PT_ROOT] "[ID]"
 
 For ptls help run 
 

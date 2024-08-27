@@ -2,6 +2,7 @@ package testutils
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/url"
 	"os"
@@ -28,7 +29,7 @@ func CreateLogger() (Logger *zap.Logger, sink *MemorySink) {
 	// Create a sink instance, and register it with zap for the "memory"
 	// protocol.
 	sink = &MemorySink{new(bytes.Buffer)}
-	zap.RegisterSink("memory", func(*url.URL) (zap.Sink, error) {
+	_ = zap.RegisterSink("memory", func(*url.URL) (zap.Sink, error) {
 		return sink, nil
 	})
 
@@ -39,6 +40,21 @@ func CreateLogger() (Logger *zap.Logger, sink *MemorySink) {
 		zapcore.DebugLevel,
 	))
 	return Logger, sink
+}
+
+func SetupLogger(logFile string) (*zap.Logger, func()) {
+	logger, _ := CreateLogger()
+
+	// Create a cleanup function to be deferred
+	cleanup := func() {
+		if err := logger.Sync(); err != nil {
+			// handle the error
+			fmt.Printf("Failed to sync logger: %v\n", err)
+		}
+		CleanupFiles(logFile)
+	}
+
+	return logger, cleanup
 }
 
 // RedirectStdoutToBuffer redirects stdout to a buffer and returns it.
@@ -76,7 +92,7 @@ func CaptureStdout(t *testing.T, do func(t *testing.T)) string {
 	outC := make(chan string)
 	go func() {
 		var buf bytes.Buffer
-		io.Copy(&buf, r)
+		_, _ = io.Copy(&buf, r)
 		outC <- buf.String()
 	}()
 	w.Close()
@@ -92,7 +108,7 @@ func CreateTempDir(t *testing.T, fs afero.Fs) string {
 
 	// Use t.Cleanup to automatically remove the directory after the test completes
 	t.Cleanup(func() {
-		fs.RemoveAll(tempDir)
+		_ = fs.RemoveAll(tempDir)
 	})
 
 	return tempDir

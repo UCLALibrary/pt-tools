@@ -9,5 +9,5 @@ var (
 	Err4 = errors.New("the pairtree id is empty and must be populated ")
 	Err5 = errors.New("the pairtree id does not contain the pairtree_prefix")
 	Err6 = errors.New("no ID was provided to process")
-	Err7 = errors.New("--Root flag or PAIRTREE_ROOT environment variable must be set")
+	Err7 = errors.New("--pairtree flag or PAIRTREE_ROOT environment variable must be set")
 )
