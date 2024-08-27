@@ -6,11 +6,11 @@ This is a Go command line program that will allow listing and interacting with a
 
 First, ensure that you have Go Version 1.22 on you system. Clone this repository
 
-`git clone https://github.com/UCLALibrary/pt-tools.git` 
+    git clone https://github.com/UCLALibrary/pt-tools.git
 
 and run 
 
-`go build -o pt-tools main.go`
+    go build -o pt-tools main.go
 
 ## ptls 
 
