@@ -341,7 +341,9 @@ func TestRecursiveFiles(t *testing.T) {
 					mockDirEntry{name: "innerb5488.txt", isDir: false},
 					mockDirEntry{name: ".hidden", isDir: true},
 				},
-				"b5/48/8/b5488/folder/.hidden": {},
+				"b5/48/8/b5488/folder/.hidden": {
+					mockDirEntry{name: "inner.txt", isDir: false},
+				},
 			},
 		},
 		{
