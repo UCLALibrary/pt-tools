@@ -31,6 +31,5 @@ jobs:
     - name: Build and Run
       run: |
         go build -o pt-tools main.go
-        ./pt-tools 
-    - name: Build and Run
+    - name: Test
       run: go test ./...
