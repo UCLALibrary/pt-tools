@@ -6,12 +6,18 @@ import (
 	"io"
 	"net/url"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/otiai10/copy"
 	"github.com/spf13/afero"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+)
+
+// Path to the test pairtree directory
+var (
+	TestPairtree = filepath.Join("..", "..", "test-dir", "test-pairtree")
 )
 
 // MemorySink implements zap.Sink by writing all messages to a buffer.

@@ -18,9 +18,8 @@ import (
 )
 
 const (
-	testPairtree = "../../test-dir/test-pairtree"
-	testDir      = "test-pairtree"
-	root         = "--pairtree="
+	testDir = "test-pairtree"
+	root    = "--pairtree="
 )
 
 // runTestWithArgs
@@ -63,7 +62,7 @@ func TestNonRecursive(t *testing.T) {
 
 			fs := afero.NewOsFs()
 			tempDir := testutils.CreateTempDir(t, fs)
-			testutils.CopyTestDirectory(t, testPairtree, tempDir)
+			testutils.CopyTestDirectory(t, testutils.TestPairtree, tempDir)
 
 			args := []string{root + tempDir, test.id}
 			runTestWithArgs(t, args, test.expected)
@@ -93,7 +92,7 @@ func TestRecursive(t *testing.T) {
 		t.Run(test.id, func(t *testing.T) {
 			fs := afero.NewOsFs()
 			tempDir := testutils.CreateTempDir(t, fs)
-			testutils.CopyTestDirectory(t, testPairtree, tempDir)
+			testutils.CopyTestDirectory(t, testutils.TestPairtree, tempDir)
 
 			// Backup original os.Args
 			originalArgs := os.Args
@@ -125,7 +124,7 @@ func TestDirOnly(t *testing.T) {
 		t.Run(test.id, func(t *testing.T) {
 			fs := afero.NewOsFs()
 			tempDir := testutils.CreateTempDir(t, fs)
-			testutils.CopyTestDirectory(t, testPairtree, tempDir)
+			testutils.CopyTestDirectory(t, testutils.TestPairtree, tempDir)
 
 			// Backup original os.Args
 			originalArgs := os.Args
@@ -157,7 +156,7 @@ func TestShowAll(t *testing.T) {
 		t.Run(test.id, func(t *testing.T) {
 			fs := afero.NewOsFs()
 			tempDir := testutils.CreateTempDir(t, fs)
-			testutils.CopyTestDirectory(t, testPairtree, tempDir)
+			testutils.CopyTestDirectory(t, testutils.TestPairtree, tempDir)
 
 			args := []string{root + tempDir, "-a", test.id}
 			runTestWithArgs(t, args, test.expected)
@@ -186,7 +185,7 @@ func TestShowAllAndDironly(t *testing.T) {
 		t.Run(test.id, func(t *testing.T) {
 			fs := afero.NewOsFs()
 			tempDir := testutils.CreateTempDir(t, fs)
-			testutils.CopyTestDirectory(t, testPairtree, tempDir)
+			testutils.CopyTestDirectory(t, testutils.TestPairtree, tempDir)
 			args := []string{root + tempDir, "-a", "-d", test.id}
 			runTestWithArgs(t, args, test.expected)
 		})
@@ -213,7 +212,7 @@ func TestShowAllRecursive(t *testing.T) {
 		t.Run(test.id, func(t *testing.T) {
 			af := afero.NewOsFs()
 			tempDir := testutils.CreateTempDir(t, af)
-			testutils.CopyTestDirectory(t, testPairtree, tempDir)
+			testutils.CopyTestDirectory(t, testutils.TestPairtree, tempDir)
 
 			// List and print the contents of the temporary directory using filepath.WalkDir
 			_ = filepath.WalkDir(tempDir, func(path string, d fs.DirEntry, err error) error {
@@ -261,7 +260,7 @@ func TestDirOnlyRecursive(t *testing.T) {
 		t.Run(test.id, func(t *testing.T) {
 			fs := afero.NewOsFs()
 			tempDir := testutils.CreateTempDir(t, fs)
-			testutils.CopyTestDirectory(t, testPairtree, tempDir)
+			testutils.CopyTestDirectory(t, testutils.TestPairtree, tempDir)
 			args := []string{root + tempDir, "-r", "-a", "-d", test.id}
 			runTestWithArgs(t, args, test.expected)
 		})

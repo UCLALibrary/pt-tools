@@ -224,7 +224,7 @@ func Run(args []string, writer io.Writer) error {
 	if outputJSON {
 		dirTree := pairtree.BuildDirectoryTree(pairPath, ptMap, true)
 
-		recursiveJSON, err := pairtree.ToJSONStructure(pairPath, dirTree)
+		recursiveJSON, err := pairtree.ToJSONStructure(dirTree)
 		if err != nil {
 			Logger.Error("Error converting to Json", zap.Error(err))
 			return err

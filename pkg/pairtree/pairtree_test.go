@@ -16,8 +16,7 @@ import (
 )
 
 const (
-	testPairtree = "../../test-dir/test-pairtree"
-	prefix       = "ark:/"
+	prefix = "ark:/"
 )
 
 // Dummy implementation of fs.DirEntry for testing purposes
@@ -184,7 +183,7 @@ func TestGetPrefix(t *testing.T) {
 		},
 		{
 			name:        "prefixExists",
-			expectPre:   "ark:/",
+			expectPre:   prefix,
 			expectError: nil,
 		},
 		{
@@ -201,8 +200,8 @@ func TestGetPrefix(t *testing.T) {
 			// Create a temporary directory for this test
 			tempDir := testutils.CreateTempDir(t, fs)
 
-			// Copies entire directory in testPairTree into the temporary directory
-			testutils.CopyTestDirectory(t, testPairtree, tempDir)
+			// Copies entire directory in testutils.TestPairtree into the temporary directory
+			testutils.CopyTestDirectory(t, testutils.TestPairtree, tempDir)
 
 			prefixFile := filepath.Join(tempDir, prefixDir)
 
@@ -233,23 +232,23 @@ func TestCreatePP(t *testing.T) {
 		ptRoot    string
 		prefix    string
 		expectErr error
-		expectPP  string
+		expectPP  []string
 	}{
 		{
 			name:      "standard",
 			id:        "ark:/345621",
 			ptRoot:    "root",
-			prefix:    "ark:/",
+			prefix:    prefix,
 			expectErr: nil,
-			expectPP:  "root/pairtree_root/34/56/21/345621",
+			expectPP:  []string{"root", "pairtree_root", "34", "56", "21", "345621"},
 		},
 		{
 			name:      "specialChars",
 			id:        "ark:/34:621",
 			ptRoot:    "root",
-			prefix:    "ark:/",
+			prefix:    prefix,
 			expectErr: nil,
-			expectPP:  "root/pairtree_root/34/+6/21/34+621",
+			expectPP:  []string{"root", "pairtree_root", "34", "+6", "21", "34+621"},
 		},
 		{
 			name:      "noPrefix",
@@ -257,15 +256,15 @@ func TestCreatePP(t *testing.T) {
 			ptRoot:    "root",
 			prefix:    "",
 			expectErr: nil,
-			expectPP:  "root/pairtree_root/34/62/1/34621",
+			expectPP:  []string{"root", "pairtree_root", "34", "62", "1", "34621"},
 		},
 		{
 			name:      "noPtRoot",
 			id:        "34621",
 			ptRoot:    "",
-			prefix:    "ark:/",
+			prefix:    prefix,
 			expectErr: error_msgs.Err3,
-			expectPP:  "",
+			expectPP:  nil,
 		},
 		{
 			name:      "noId",
@@ -273,22 +272,29 @@ func TestCreatePP(t *testing.T) {
 			ptRoot:    "root",
 			prefix:    "",
 			expectErr: error_msgs.Err4,
-			expectPP:  "",
+			expectPP:  nil,
 		},
 		{
 			name:      "idNoPrefix",
 			id:        "34621",
 			ptRoot:    "root",
-			prefix:    "ark:/",
+			prefix:    prefix,
 			expectErr: error_msgs.Err5,
-			expectPP:  "",
+			expectPP:  nil,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			pairpath, err := CreatePP(test.id, test.ptRoot, test.prefix)
-			assert.Equal(t, test.expectPP, pairpath)
+
+			// Join the expected path components
+			expectedPairpath := ""
+			if test.expectPP != nil {
+				expectedPairpath = filepath.Join(test.expectPP...)
+			}
+
+			assert.Equal(t, expectedPairpath, pairpath)
 			assert.ErrorIs(t, err, test.expectErr)
 
 		})
@@ -305,43 +311,43 @@ func TestRecursiveFiles(t *testing.T) {
 		expectMap   map[string][]fs.DirEntry
 	}{
 		{
-			pairpath:    "a5/38/8/a5388",
+			pairpath:    filepath.Join("a5", "38", "8", "a5388"),
 			id:          "a5388",
 			expectError: nil,
 			expectMap: map[string][]fs.DirEntry{
-				"a5/38/8/a5388": {
+				filepath.Join("a5", "38", "8", "a5388"): {
 					mockDirEntry{name: "a5388.txt", isDir: false},
 				},
 			},
 		},
 		{
-			pairpath:    "a5/48/92/a54892",
+			pairpath:    filepath.Join("a5", "48", "92", "a54892"),
 			id:          "a54892",
 			expectError: nil,
 			expectMap: map[string][]fs.DirEntry{
-				"a5/48/92/a54892": {
+				filepath.Join("a5", "48", "92", "a54892"): {
 					mockDirEntry{name: "a54892.txt", isDir: false},
 					mockDirEntry{name: ".hidden.txt", isDir: false},
 					mockDirEntry{name: ".hidden", isDir: true},
 				},
-				"a5/48/92/a54892/.hidden": {mockDirEntry{name: "innerHidden.txt", isDir: false}},
+				filepath.Join("a5", "48", "92", "a54892", ".hidden"): {mockDirEntry{name: "innerHidden.txt", isDir: false}},
 			},
 		},
 		{
-			pairpath:    "b5/48/8/b5488",
+			pairpath:    filepath.Join("b5", "48", "8", "b5488"),
 			id:          "b5488",
 			expectError: nil,
 			expectMap: map[string][]fs.DirEntry{
-				"b5/48/8/b5488": {
+				filepath.Join("b5", "48", "8", "b5488"): {
 					mockDirEntry{name: "outerb5488.txt", isDir: false},
 					mockDirEntry{name: "folder", isDir: true},
 				},
-				"b5/48/8/b5488/folder": {
+				filepath.Join("b5", "48", "8", "b5488", "folder"): {
 					mockDirEntry{name: ".hiddenFile.txt", isDir: false},
 					mockDirEntry{name: "innerb5488.txt", isDir: false},
 					mockDirEntry{name: ".hidden", isDir: true},
 				},
-				"b5/48/8/b5488/folder/.hidden": {
+				filepath.Join("b5", "48", "8", "b5488", "folder", ".hidden"): {
 					mockDirEntry{name: "inner.txt", isDir: false},
 				},
 			},
@@ -361,7 +367,7 @@ func TestRecursiveFiles(t *testing.T) {
 			// Create a temporary directory for this test
 			tempDir := testutils.CreateTempDir(t, fs)
 
-			testutils.CopyTestDirectory(t, testPairtree, tempDir)
+			testutils.CopyTestDirectory(t, testutils.TestPairtree, tempDir)
 
 			// Create the new testpath that has the full directory name
 			prefixPairtree := filepath.Join(tempDir, rootDir)
@@ -384,21 +390,21 @@ func TestNonRecursiveFiles(t *testing.T) {
 		expectMap   map[string][]fs.DirEntry
 	}{
 		{
-			pairpath:    "a5/38/8/a5388",
+			pairpath:    filepath.Join("a5", "38", "8", "a5388"),
 			id:          "a5388",
 			expectError: nil,
 			expectMap: map[string][]fs.DirEntry{
-				"a5/38/8/a5388": {
+				filepath.Join("a5", "38", "8", "a5388"): {
 					mockDirEntry{name: "a5388.txt", isDir: false},
 				},
 			},
 		},
 		{
-			pairpath:    "a5/48/92/a54892",
+			pairpath:    filepath.Join("a5", "48", "92", "a54892"),
 			id:          "a54892",
 			expectError: nil,
 			expectMap: map[string][]fs.DirEntry{
-				"a5/48/92/a54892": {
+				filepath.Join("a5", "48", "92", "a54892"): {
 					mockDirEntry{name: "a54892.txt", isDir: false},
 					mockDirEntry{name: ".hidden.txt", isDir: false},
 					mockDirEntry{name: ".hidden", isDir: true},
@@ -406,11 +412,11 @@ func TestNonRecursiveFiles(t *testing.T) {
 			},
 		},
 		{
-			pairpath:    "b5/48/8/b5488",
+			pairpath:    filepath.Join("b5", "48", "8", "b5488"),
 			id:          "b5488",
 			expectError: nil,
 			expectMap: map[string][]fs.DirEntry{
-				"b5/48/8/b5488": {
+				filepath.Join("b5", "48", "8", "b5488"): {
 					mockDirEntry{name: "outerb5488.txt", isDir: false},
 					mockDirEntry{name: "folder", isDir: true},
 				},
@@ -431,7 +437,7 @@ func TestNonRecursiveFiles(t *testing.T) {
 			// Create a temporary directory for this test
 			tempDir := testutils.CreateTempDir(t, fs)
 
-			testutils.CopyTestDirectory(t, testPairtree, tempDir)
+			testutils.CopyTestDirectory(t, testutils.TestPairtree, tempDir)
 			// Create the new testpath that has the full directory name
 			prefixPairtree := filepath.Join(tempDir, rootDir)
 			updatedMap := updateMapKeys(test.expectMap, prefixPairtree)
@@ -469,7 +475,7 @@ func TestCheckPTVer(t *testing.T) {
 			tempDir := testutils.CreateTempDir(t, fs)
 
 			// testPath := filepath.Join(tempDir, test.name)
-			err := copy.Copy(testPairtree, tempDir)
+			err := copy.Copy(testutils.TestPairtree, tempDir)
 			if err != nil {
 				t.Fatalf("Error copying directory: %v", err)
 			}
@@ -495,29 +501,6 @@ func TestCheckPTVer(t *testing.T) {
 
 }
 
-// TestEncodeChar tests the EncodeChar function
-func TestEncodeChar(t *testing.T) {
-	tests := []struct {
-		input    string
-		expected string
-	}{
-		{"abc", "abc"}, // No special characters
-		{"ark:/13030/xt12t3", "ark+=13030=xt12t3"}, // Characters that should be replaced
-		{"<>= ", "^3c^3e^3d^20"},                   // Characters that should be encoded
-		{"Hello, World!", "Hello^2c^20World!"},     // Mixed case with some encoded characters
-		{"ark://345", "ark+==345"},                 // Common file example
-		{"http://n2t.info/urn:nbn:se:kb:repos-1", "http+==n2t,info=urn+nbn+se+kb+repos-1"},
-		{"what-the-*@?#!^!?", "what-the-^2a@^3f#!^5e!^3f"},
-	}
-
-	for _, test := range tests {
-		t.Run(test.input, func(t *testing.T) {
-			result := EncodeChar(test.input)
-			assert.Equal(t, test.expected, result)
-		})
-	}
-}
-
 // TestBuildDirectoryTree tests the BuildDirectoryTree function
 func TestBuildDirectoryTree(t *testing.T) {
 	tests := []struct {
@@ -529,19 +512,19 @@ func TestBuildDirectoryTree(t *testing.T) {
 	}{
 		{
 			name: "SimpleDirectoryStructure",
-			path: "/root",
+			path: filepath.Join("root"),
 			entriesMap: map[string][]fs.DirEntry{
-				"/root": {
+				filepath.Join("root"): {
 					mockDirEntry{name: "file1.txt", isDir: false},
 					mockDirEntry{name: "dir1", isDir: true},
 				},
-				"/root/dir1": {
+				filepath.Join("root", "dir1"): {
 					mockDirEntry{name: "file2.txt", isDir: false},
 				},
 			},
 			isFirstIteration: true,
 			expected: Directory{
-				Name: "/root",
+				Name: filepath.Join("root"),
 				Directories: []Directory{
 					{
 						Name: "dir1",
@@ -557,32 +540,32 @@ func TestBuildDirectoryTree(t *testing.T) {
 		},
 		{
 			name: "EmptyDirectory",
-			path: "/root",
+			path: filepath.Join("root"),
 			entriesMap: map[string][]fs.DirEntry{
-				"/root": {},
+				filepath.Join("root"): {},
 			},
 			isFirstIteration: true,
 			expected: Directory{
-				Name: "/root",
+				Name: filepath.Join("root"),
 			},
 		},
 		{
 			name: "NestedDirectories",
-			path: "/root",
+			path: filepath.Join("root"),
 			entriesMap: map[string][]fs.DirEntry{
-				"/root": {
+				filepath.Join("root"): {
 					mockDirEntry{name: "dir1", isDir: true},
 				},
-				"/root/dir1": {
+				filepath.Join("root", "dir1"): {
 					mockDirEntry{name: "dir2", isDir: true},
 				},
-				"/root/dir1/dir2": {
+				filepath.Join("root", "dir1", "dir2"): {
 					mockDirEntry{name: "file1.txt", isDir: false},
 				},
 			},
 			isFirstIteration: true,
 			expected: Directory{
-				Name: "/root",
+				Name: filepath.Join("root"),
 				Directories: []Directory{
 					{
 						Name: "dir1",
@@ -600,23 +583,23 @@ func TestBuildDirectoryTree(t *testing.T) {
 		},
 		{
 			name: "NestedDirWFiles",
-			path: "/root",
+			path: filepath.Join("root"),
 			entriesMap: map[string][]fs.DirEntry{
-				"/root": {
+				filepath.Join("root"): {
 					mockDirEntry{name: "dir1", isDir: true},
 					mockDirEntry{name: "file1.txt", isDir: false},
 					mockDirEntry{name: "file2.txt", isDir: false},
 				},
-				"/root/dir1": {
+				filepath.Join("root", "dir1"): {
 					mockDirEntry{name: "dir2", isDir: true},
 				},
-				"/root/dir1/dir2": {
+				filepath.Join("root", "dir1", "dir2"): {
 					mockDirEntry{name: "file3.txt", isDir: false},
 				},
 			},
 			isFirstIteration: true,
 			expected: Directory{
-				Name: "/root",
+				Name: filepath.Join("root"),
 				Directories: []Directory{
 					{
 						Name: "dir1",
@@ -641,7 +624,7 @@ func TestBuildDirectoryTree(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			result := BuildDirectoryTree(test.path, test.entriesMap, test.isFirstIteration)
-			assert.True(t, compareDirectories(result, test.expected), "Expected map %+v, got %+v", test.name, test.expected, result)
+			assert.True(t, compareDirectories(result, test.expected), "Expected map %+v, got %+v", test.expected, result)
 
 		})
 	}
@@ -651,14 +634,12 @@ func TestBuildDirectoryTree(t *testing.T) {
 func TestToJSONStructure(t *testing.T) {
 	tests := []struct {
 		name       string
-		rootPath   string
 		dirTree    Directory
 		expectJSON string
 		expectErr  error
 	}{
 		{
-			name:     "empty directory",
-			rootPath: "/",
+			name: "empty directory",
 			dirTree: Directory{
 				Name:        "root",
 				Directories: []Directory{},
@@ -672,8 +653,7 @@ func TestToJSONStructure(t *testing.T) {
 			expectErr: nil,
 		},
 		{
-			name:     "directory with files",
-			rootPath: "/",
+			name: "directory with files",
 			dirTree: Directory{
 				Name: "root",
 				Directories: []Directory{
@@ -709,8 +689,7 @@ func TestToJSONStructure(t *testing.T) {
 			expectErr: nil,
 		},
 		{
-			name:     "nested directories",
-			rootPath: "/",
+			name: "nested directories",
 			dirTree: Directory{
 				Name: "root",
 				Directories: []Directory{
@@ -756,7 +735,7 @@ func TestToJSONStructure(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			gotJSON, err := ToJSONStructure(test.rootPath, test.dirTree)
+			gotJSON, err := ToJSONStructure(test.dirTree)
 			assert.True(t, errors.Is(err, test.expectErr))
 
 			assert.JSONEq(t, test.expectJSON, string(gotJSON))

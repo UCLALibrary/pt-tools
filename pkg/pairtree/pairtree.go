@@ -99,37 +99,6 @@ func CheckPTVer(ptRoot string) error {
 	}
 }
 
-// EncodeChar takes an id and converts special characters based on the pairtree spec
-func EncodeChar(id string) string {
-	var encoded strings.Builder
-
-	for _, r := range id {
-		switch r {
-		// Convert specific visible ASCII characters to their 3-character hexadecimal encoding
-		case ' ', '"', '*', '+', ',', '<', '=', '>', '?', '\\', '^', '|':
-			encoded.WriteString(fmt.Sprintf("^%02x", r))
-		// Perform specific single-character to single-character conversions
-		case '/':
-			encoded.WriteRune('=')
-		case ':':
-			encoded.WriteRune('+')
-		case '.':
-			encoded.WriteRune(',')
-		// Default case: Check if the character is outside the range of visible ASCII
-		default:
-			if r < 0x21 || r > 0x7E {
-				// Convert the character to its 3-character hexadecimal encoding
-				encoded.WriteString(fmt.Sprintf("^%02x", r))
-			} else {
-				// Keep all other characters the same
-				encoded.WriteRune(r)
-			}
-		}
-	}
-
-	return encoded.String()
-}
-
 // CreatePP creates the full pairpath given the root, id, and prefix
 func CreatePP(id, ptRoot, prefix string) (string, error) {
 	if strings.TrimSpace(ptRoot) == "" {
@@ -150,7 +119,8 @@ func CreatePP(id, ptRoot, prefix string) (string, error) {
 	ptRoot = filepath.Join(ptRoot, rootDir)
 
 	pairPath := caltech_pairtree.Encode(id)
-	id = EncodeChar(id)
+
+	id = string(caltech_pairtree.CharEncode([]rune(id)))
 	pairPath = filepath.Join(pairPath, id)
 	pairPath = filepath.Join(ptRoot, pairPath)
 	return pairPath, nil
@@ -206,7 +176,7 @@ func NonRecursiveFiles(pairPath string) (map[string][]fs.DirEntry, error) {
 // set to true excpet for when it is being used recursively by BuildDirectoryTree()
 func BuildDirectoryTree(path string, entriesMap map[string][]fs.DirEntry, isFirstIteration bool) Directory {
 	var dir Directory
-
+	path = filepath.FromSlash(path)
 	if isFirstIteration {
 		dir = Directory{
 			Name: path, // Use the whole path name for the first iteration
@@ -232,7 +202,7 @@ func BuildDirectoryTree(path string, entriesMap map[string][]fs.DirEntry, isFirs
 }
 
 // ToJSONStructure converts the map into the desired JSON structure
-func ToJSONStructure(rootPath string, dirTree Directory) ([]byte, error) {
+func ToJSONStructure(dirTree Directory) ([]byte, error) {
 	// Convert to JSON
 	jsonData, err := json.MarshalIndent(dirTree, "", "  ")
 	if err != nil {
