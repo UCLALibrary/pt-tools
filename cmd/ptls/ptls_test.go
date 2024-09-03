@@ -200,7 +200,7 @@ func TestShowAllRecursive(t *testing.T) {
 		expected []string
 	}{
 		{id: "ark:/a54892", expected: []string{".hidden/", ".hidden.txt", "a54892.txt", "innerHidden.txt"}},
-		{id: "ark:/b5488", expected: []string{"folder/", "outerb5488.txt", ".hidden/", ".hiddenFile.txt"}},
+		{id: "ark:/b5488", expected: []string{"folder/", "outerb5488.txt", ".hidden/", ".hiddenFile.txt", "innerb5488.txt", "inner.txt"}},
 	}
 
 	// Create a logger instance using the registered sink.

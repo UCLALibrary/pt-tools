@@ -8,9 +8,6 @@ on:
   pull_request:
     branches:
       - main
-  push:
-    branches:
-      - SERV-1106-windows
 
 jobs:
   build:
@@ -35,4 +32,4 @@ jobs:
       run: |
         go build -o pt-tools main.go
     - name: Test
-      run: go test -v ./...
+      run: go test ./...
