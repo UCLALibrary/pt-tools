@@ -2,9 +2,19 @@
 
 This is a Go command line program that will allow listing and interacting with a Pairtree without knowing anything about the Pairtree’s internal structure. 
 
+## Installation
+
+First, ensure that you have Go Version 1.22 on you system. Clone this repository
+
+    git clone https://github.com/UCLALibrary/pt-tools.git
+
+and run 
+
+    go build -o pt-tools main.go
+
 ## ptls 
 
-Ptls is a ls-like tool that can display the contents of the Pairtree object. The basic command is `ptls [ID]` (when an ENV PAIRTREE_ROOT is set) or `ptls [PT_ROOT] [ID]` with the output listing the contents of the Pairtree object directory. This pattern holds with all options of `ptls` except `ptls -h`. This command also supports trailing wildcards such as `ptls ark:/53355/cy88*`. To allow for trailing wildcards, the `[ID]` must be in quotes. 
+Ptls is a ls-like tool that can display the contents of the Pairtree object. The basic command is `ptls [ID]` (when an ENV PAIRTREE_ROOT is set) or `ptls [PT_ROOT] [ID]` with the output listing the contents of the Pairtree object directory. This pattern holds with all options of `ptls` except `ptls -h`. No flags need to be used, but all flags can be used depending on user needs.  
 
 The basic command is  
 
@@ -12,13 +22,17 @@ The basic command is
 
 or when the ENV PAIRTREE_ROOT is not set 
 
-    ptls [PT_ROOT] "[ID]"
+    ptls --pairtree [PT_ROOT] "[ID]"
+
+or 
+
+    ptls -p [PT_ROOT] "[ID]"
 
 For ptls help run 
 
     ptls -h
 
-To list all files not including . and .. directories run 
+To list all files including . and .. directories run 
 
     ptls -a
 
