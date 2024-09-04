@@ -12,6 +12,10 @@ and run
 
     go build -o pt-tools main.go
 
+or to build and run tests and checkstyles use the command 
+    
+    make
+
 ## ptls 
 
 Ptls is a ls-like tool that can display the contents of the Pairtree object. The basic command is `ptls [ID]` (when an ENV PAIRTREE_ROOT is set) or `ptls [PT_ROOT] [ID]` with the output listing the contents of the Pairtree object directory. This pattern holds with all options of `ptls` except `ptls -h`. No flags need to be used, but all flags can be used depending on user needs.  
