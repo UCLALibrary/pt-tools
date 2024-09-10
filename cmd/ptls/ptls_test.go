@@ -12,7 +12,7 @@ import (
 	"testing"
 
 	error_msgs "github.com/UCLALibrary/pt-tools/pkg/error-msgs"
-	"github.com/UCLALibrary/pt-tools/pkg/testutils"
+	"github.com/UCLALibrary/pt-tools/testutils"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 )
@@ -32,7 +32,6 @@ func runTestWithArgs(t *testing.T, args, expected []string) {
 
 	// Get the output
 	output := buf.String()
-	fmt.Println(output)
 
 	// Check if the output contains the expected strings
 	for _, expect := range expected {

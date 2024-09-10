@@ -99,7 +99,7 @@ func CheckPTVer(ptRoot string) error {
 	}
 }
 
-// CreatePP creates the full pairpath given the root, id, and prefix
+// CreatePP creates the full pairpath given the root, id, and prefix giving the pairpath to an object
 func CreatePP(id, ptRoot, prefix string) (string, error) {
 	if strings.TrimSpace(ptRoot) == "" {
 		return "", error_msgs.Err3
@@ -210,4 +210,20 @@ func ToJSONStructure(dirTree Directory) ([]byte, error) {
 	}
 
 	return jsonData, nil
+}
+
+// DeletePairtreeItem searches through a pairtree directory given the pairPath and subPath,
+// and deletes the given directory or file.
+func DeletePairtreeItem(fullPath string) error {
+	// Check if the file or directory exists
+	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
+		return err
+	}
+
+	// Attempt to remove the directory or file
+	err := os.RemoveAll(fullPath)
+	if err != nil {
+		return err
+	}
+	return nil
 }

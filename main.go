@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/UCLALibrary/pt-tools/cmd/ptls"
+	"github.com/UCLALibrary/pt-tools/cmd/ptrm"
 )
 
 func main() {
@@ -23,6 +24,11 @@ func main() {
 	switch command {
 	case "ptls":
 		err := ptls.Run(args, writer)
+		if err != nil {
+			os.Exit(1)
+		}
+	case "ptrm":
+		err := ptrm.Run(args, writer)
 		if err != nil {
 			os.Exit(1)
 		}
