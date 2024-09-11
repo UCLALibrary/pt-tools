@@ -19,9 +19,9 @@ import (
 
 	error_msgs "github.com/UCLALibrary/pt-tools/pkg/error-msgs"
 	"github.com/UCLALibrary/pt-tools/pkg/pairtree"
+	"github.com/UCLALibrary/pt-tools/utils"
 	"github.com/spf13/cobra"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 // FileInfo holds the name and type of a directory entry.
@@ -37,49 +37,10 @@ var (
 	outputJSON   bool
 	recursive    bool
 	ptRoot       string
-	Logger       *zap.Logger = logger()
 	logFile      string      = "logs.log"
+	Logger       *zap.Logger = utils.Logger(logFile)
 	id           string      = ""
 )
-
-// ApplyExitOnHelp exits out of program if --help is flag
-func ApplyExitOnHelp(c *cobra.Command, exitCode int) {
-	helpFunc := c.HelpFunc()
-	c.SetHelpFunc(func(c *cobra.Command, s []string) {
-		helpFunc(c, s)
-		os.Exit(exitCode)
-	})
-}
-
-// logger creates logger with output of info and debug to file and error to stdout
-func logger() *zap.Logger {
-	pe := zap.NewDevelopmentEncoderConfig()
-
-	fileEncoder := zapcore.NewJSONEncoder(pe)
-
-	pe.EncodeTime = zapcore.ISO8601TimeEncoder // The encoder can be customized for each output
-
-	// Console encoder (for stdout)
-	consoleEncoder := zapcore.NewConsoleEncoder(pe)
-
-	// Create file core
-	file, err := os.Create(logFile)
-	if err != nil {
-		panic(err)
-	}
-
-	fileCore := zapcore.NewCore(fileEncoder, zapcore.AddSync(file), zap.DebugLevel)
-
-	// Console core for errors
-	consoleCore := zapcore.NewCore(consoleEncoder, zapcore.AddSync(os.Stdout), zapcore.ErrorLevel)
-
-	// Combine the cores
-	core := zapcore.NewTee(fileCore, consoleCore)
-	// Create a logger with two cores
-	logger := zap.New(core, zap.AddCaller())
-
-	return logger
-}
 
 func initFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVarP(&showAll, "a", "a", false, "do not ignore entries starting with .")
@@ -100,16 +61,6 @@ func Run(args []string, writer io.Writer) error {
 		Short: "ptls is a tool to list Pairtree object directories.",
 		Long:  "A tool to list contents of Pairtree object directories with various options.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) < 1 {
-				fmt.Fprintln(writer, "Please provide an ID for the pairtree")
-				Logger.Error("Error getting ID",
-					zap.Error(error_msgs.Err6))
-
-				return error_msgs.Err6
-			}
-			// Extract the ID from the final argument
-			id = args[len(args)-1]
-
 			// If the root has not been set yet check the ENV vars
 			if ptRoot == "" {
 
@@ -120,6 +71,16 @@ func Run(args []string, writer io.Writer) error {
 					return error_msgs.Err7
 				}
 			}
+
+			if len(args) < 1 {
+				fmt.Fprintln(writer, "Please provide an ID for the pairtree")
+				Logger.Error("Error getting ID",
+					zap.Error(error_msgs.Err6))
+
+				return error_msgs.Err6
+			}
+			// Extract the ID from the final argument
+			id = args[len(args)-1]
 
 			Logger.Info("Pairtree root is",
 				zap.String("PAIRTREE_ROOT", ptRoot),
@@ -133,7 +94,7 @@ func Run(args []string, writer io.Writer) error {
 	rootCmd.SetErr(writer)
 	rootCmd.SetArgs(args)
 
-	ApplyExitOnHelp(rootCmd, 0)
+	utils.ApplyExitOnHelp(rootCmd, 0)
 
 	if err = rootCmd.Execute(); err != nil {
 		Logger.Error("Error setting command line",

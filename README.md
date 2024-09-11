@@ -103,7 +103,7 @@ To produce a tar/gzipped output or upack a tar/gzipped in the pairtree structure
 
 ## ptrm
 
-Ptrm is a rm-like tool that can delete things from within a Pairtree object or remove a Pairtree object altogether.
+Ptrm is a rm-like tool that can delete things from within a Pairtree object or remove a Pairtree object altogether. There is also the ability to delete files and directories in the object as long as the subpath to that file or directory is provided. 
 
 The basic command is 
 
@@ -116,6 +116,10 @@ Or when the ENV PAIRTREE_ROOT is not set
 To delete a specific file from the pairtree use 
 
     ptrm [ID] [subpath/to/file.txt]
+
+To delete a specific directory from the pairtree use 
+
+    ptrm [ID] [subpath/to/directory]
 
 Or when the ENV PAIRTREE_ROOT is not set 
 

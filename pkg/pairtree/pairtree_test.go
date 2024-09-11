@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	error_msgs "github.com/UCLALibrary/pt-tools/pkg/error-msgs"
-	"github.com/UCLALibrary/pt-tools/pkg/testutils"
+	"github.com/UCLALibrary/pt-tools/testutils"
 	"github.com/otiai10/copy"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -740,6 +740,53 @@ func TestToJSONStructure(t *testing.T) {
 
 			assert.JSONEq(t, test.expectJSON, string(gotJSON))
 
+		})
+	}
+}
+
+// TestDeletePairtreeItem tests if directories and files are deleted when passed in
+func TestDeletePairtreeItem(t *testing.T) {
+	tests := []struct {
+		name        string
+		pairpath    string
+		expectError error
+	}{
+		{
+			name:        "file",
+			pairpath:    filepath.Join("a5", "38", "8", "a5388", "a5388.txt"),
+			expectError: nil,
+		},
+		{
+			name:        "directory",
+			pairpath:    filepath.Join("b5", "48", "8", "b5488", "folder"),
+			expectError: nil,
+		},
+		{
+			name:        "object",
+			pairpath:    filepath.Join("a5", "48", "8", "a5488"),
+			expectError: nil,
+		},
+		{
+			name:        "doesNotExist",
+			pairpath:    "doesNotExist",
+			expectError: os.ErrNotExist,
+		},
+	}
+
+	fs := afero.NewOsFs()
+
+	for _, test := range tests {
+		t.Run(test.pairpath, func(t *testing.T) {
+			// Create a temporary directory for this test
+			tempDir := testutils.CreateTempDir(t, fs)
+
+			testutils.CopyTestDirectory(t, testutils.TestPairtree, tempDir)
+			// Create the new testpath that has the full directory name
+			prefixPairtree := filepath.Join(tempDir, rootDir)
+			fullPath := filepath.Join(prefixPairtree, test.pairpath)
+			err := DeletePairtreeItem(fullPath)
+			// Compare actual results with the expected results
+			assert.ErrorIs(t, err, test.expectError)
 		})
 	}
 }
