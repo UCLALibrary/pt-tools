@@ -1,6 +1,6 @@
 # pt-tools
 
-This is a Go command line program that will allow listing and interacting with a Pairtree without knowing anything about the Pairtree’s internal structure. When using pt-tools, we highly suggest utilizing the `pairtree_prefix` file for schemes such as `ark:/`. When not using the`pairtree_prefix` file, denote the pairtree ID with `pt://`, so an ID should looke like `pt://ID`. This prefix will be stripped from an ID before interacting with  the pairtree. If no prefix is provided in the `pairtree_prefix` file and attached to the ID or `pt://` is not used, an error will be thrown.   
+This is a Go command line program that will allow listing and interacting with a Pairtree without knowing anything about the Pairtree’s internal structure. When using pt-tools, we highly suggest utilizing a pairtree prefix for schemes such as `ark:/`. When not using a defined prefix, denote the pairtree ID with `pt://`, so an ID should look like `pt://ID`. This prefix will be stripped from an ID before interacting with  the pairtree. If no prefix is provided attached to the ID or `pt://` is not used, an error will be thrown.   
 
 ## Installation
 
@@ -68,21 +68,21 @@ so to copy from a paitree ID to an output path
 
 When an ENV PAIRTREE_ROOT is not set, the command is 
 
-    ptcp -p [PT_ROOT] [/path/to/output] [ID]
+    ptcp -p [PT_ROOT] [ID] [/path/to/output]
 
 To overwrite target files that already exist in the destination use the `-d` option. It runs with the same option if ENV PAIRTREE_ROOT is set or not set.
 
-    ptcp -d [ID] [/path/to/output/]   
+    ptcp -d [/path/to/output/] [ID]
                                         
 The `-n` option allows you to access subdirectories in the pairtree object. To modify the path of the file or directory when you are copying into the pairtree, the subpath follows `-n` and then will be added to the ID. The `-n` option should be used if you want to place the file or directory in a subpath within the ID or if you want to change the file or directory name that is copied. If the path folowing `-n` does not exist, it will be created in the pairtree. It also alows you to copy a file or directory that is in a subpath in the pairtree object. The file or directory at the end of the `-n` subpath will be the one copied into the destination source. If the file or directory does not exist an error will be returned. The command to create a new directory or place things into an existing directory would be 
 
     ptcp [/path/to/output] [ID] -n [newpath/in/ID]
 
-when changing a file name copied into the `ID` 
+When changing a file name copied into the `ID` 
 
     ptcp [/path/to/outputfile] [ID] -n [newpath/newFileName]
 
-when specificying a file or directory that is being copied from the ID
+When specificying a file or directory that is being copied from the ID
 
     ptcp [ID] [/path/to/output] -n [path/to/file/or/directory]
 
