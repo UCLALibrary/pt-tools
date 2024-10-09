@@ -1,12 +1,15 @@
 module github.com/UCLALibrary/pt-tools
 
-go 1.22.5
+go 1.23.2
 
 require (
 	github.com/caltechlibrary/pairtree v1.0.4
 	github.com/otiai10/copy v1.14.0
 	github.com/spf13/afero v1.11.0
+	github.com/otiai10/copy v1.14.0
+	github.com/spf13/afero v1.11.0
 	github.com/spf13/cobra v1.8.1
+	github.com/stretchr/testify v1.9.0
 	github.com/stretchr/testify v1.9.0
 	go.uber.org/zap v1.27.0
 )
