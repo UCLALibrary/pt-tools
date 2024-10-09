@@ -6,10 +6,12 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	error_msgs "github.com/UCLALibrary/pt-tools/pkg/error-msgs"
 	"github.com/UCLALibrary/pt-tools/testutils"
+	"github.com/mholt/archiver/v3"
 	"github.com/otiai10/copy"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
@@ -29,21 +31,6 @@ func (m mockDirEntry) Name() string               { return m.name }
 func (m mockDirEntry) IsDir() bool                { return m.isDir }
 func (m mockDirEntry) Type() fs.FileMode          { return 0 }
 func (m mockDirEntry) Info() (fs.FileInfo, error) { return nil, nil }
-
-// CreateFileInDir creates a file with the given name in the specified directory.
-func CreateFileInDir(dir string, filename string) error {
-	// Join the directory and filename to get the full path of the new file.
-	filePath := filepath.Join(dir, filename)
-
-	// Create the file.
-	file, err := os.Create(filePath)
-	if err != nil {
-		return fmt.Errorf("failed to create file: %v", err)
-	}
-	defer file.Close()
-
-	return nil
-}
 
 // updateMapKeys adds a prefix to all keys in the map.
 func updateMapKeys(original map[string][]fs.DirEntry, prefix string) map[string][]fs.DirEntry {
@@ -787,6 +774,388 @@ func TestDeletePairtreeItem(t *testing.T) {
 			err := DeletePairtreeItem(fullPath)
 			// Compare actual results with the expected results
 			assert.ErrorIs(t, err, test.expectError)
+		})
+	}
+}
+
+func TestCopyFile(t *testing.T) {
+
+	testFiles := []struct {
+		testName       string
+		fileName       string
+		changeFileName bool
+		overwrite      bool
+		expectError    error
+	}{
+		{
+			testName:       "No overwrite and change file name",
+			fileName:       "newfilename.txt",
+			changeFileName: true,
+			overwrite:      true,
+			expectError:    nil,
+		},
+		{
+			testName:       "No overwrite and same file name",
+			fileName:       "",
+			changeFileName: false,
+			overwrite:      true,
+			expectError:    nil,
+		},
+		{
+			testName:       "Overwrite existing file",
+			fileName:       ".1",
+			changeFileName: false,
+			overwrite:      false,
+			expectError:    nil,
+		},
+	}
+
+	fs := afero.NewOsFs()
+
+	for _, test := range testFiles {
+		t.Run(test.testName, func(t *testing.T) {
+
+			destFilePath := ""
+			content := []byte("File contents")
+			tempFilePath := testutils.CreateTempFile(t, fs, content)
+			tempFile := filepath.Base(tempFilePath)
+			dirDest := testutils.CreateTempDir(t, fs)
+
+			if test.changeFileName {
+				destFilePath = filepath.Join(dirDest, test.fileName)
+				dirDest = filepath.Join(dirDest, test.fileName)
+			} else {
+				// Build the expected destination file path
+				destFilePath = filepath.Join(dirDest, tempFile)
+			}
+
+			_, err := CopyFileOrFolder(tempFilePath, dirDest, test.overwrite)
+			assert.ErrorIs(t, err, test.expectError)
+
+			// if the .x naming convetion should be used, recopy the file
+			if !test.overwrite {
+				_, err = CopyFileOrFolder(tempFilePath, dirDest, test.overwrite)
+				assert.ErrorIs(t, err, test.expectError)
+				destFilePath = destFilePath + test.fileName
+			}
+
+			// Check if the destination file exists
+			exists, err := afero.Exists(fs, destFilePath)
+			assert.ErrorIs(t, err, nil, "Failed to check if dirSrc was copied: %v", err)
+			assert.True(t, exists, "File was not copied to destination")
+
+			// Verify the copied file's contents match the original
+			copiedFileContent, err := afero.ReadFile(fs, destFilePath)
+			if err != nil {
+				t.Fatalf("Failed to read copied file: %v", err)
+			}
+			assert.Equal(t, content, copiedFileContent, "Copied file content does not match the original")
+
+			if test.changeFileName || !test.overwrite {
+				assert.NotEqual(t, filepath.Base(tempFilePath), filepath.Base(destFilePath), "File names match and should not")
+			} else {
+				// Check that the file name matches
+				assert.Equal(t, filepath.Base(tempFilePath), filepath.Base(destFilePath), "File names do not match")
+			}
+		})
+	}
+}
+
+func TestCopyFolder(t *testing.T) {
+	testFolders := []struct {
+		testName         string
+		folderName       string
+		changeFolderName bool
+		overwrite        bool
+		expectError      error
+		expFoldName      string
+	}{
+		{
+			testName:         "Basic copy of folder",
+			folderName:       "folderExists",
+			changeFolderName: false,
+			overwrite:        true,
+			expectError:      nil,
+			expFoldName:      filepath.Join("folderExists", "folder"),
+		},
+		{
+			testName:         "Slash added to folder name",
+			folderName:       "folderExists" + string(os.PathSeparator),
+			changeFolderName: false,
+			overwrite:        true,
+			expectError:      nil,
+			expFoldName:      filepath.Join("folderExists", "folder"),
+		},
+		{
+			testName:         "New folder name",
+			folderName:       "newFolder",
+			changeFolderName: true,
+			overwrite:        true,
+			expectError:      nil,
+			expFoldName:      filepath.Join("newFolder"),
+		},
+		{
+			testName:         "Do not overwrite folder and use .x",
+			folderName:       "noOverwrite",
+			changeFolderName: false,
+			overwrite:        false,
+			expectError:      nil,
+			expFoldName:      filepath.Join("noOverwrite", "folder.1"),
+		},
+	}
+
+	fs := afero.NewOsFs()
+
+	for _, test := range testFolders {
+		t.Run(test.testName, func(t *testing.T) {
+			srcFolder := "folder"
+
+			dirSrc := testutils.CreateTempDir(t, fs)
+			dirDest := testutils.CreateTempDir(t, fs)
+
+			dirSrc = testutils.CreateDirInDir(t, fs, dirSrc, srcFolder)
+			_ = testutils.CreateFileInDir(t, dirSrc, "file.txt")
+
+			if test.changeFolderName {
+				dirDest = filepath.Join(dirDest, test.folderName)
+			} else {
+				dirDest = testutils.CreateDirInDir(t, fs, dirDest, test.folderName)
+			}
+
+			if strings.HasSuffix(test.folderName, string(os.PathSeparator)) {
+				dirDest += string(os.PathSeparator)
+			}
+
+			finalDest, err := CopyFileOrFolder(dirSrc, dirDest, test.overwrite)
+			assert.ErrorIs(t, err, test.expectError, "Expected CopyFilrOrFolder to return %v", err)
+
+			if !test.overwrite {
+				finalDest, err = CopyFileOrFolder(dirSrc, dirDest, test.overwrite)
+				assert.ErrorIs(t, err, test.expectError)
+			}
+			exists, err := afero.DirExists(fs, finalDest)
+			assert.ErrorIs(t, err, nil, "Failed to check if dirSrc was copied: %v", err)
+
+			// Optionally, check if the contents of dirSrc were copied
+			assert.True(t, exists, "Directory %s was not copied to destination: %s", dirSrc, dirDest)
+
+			srcFiles, err := afero.ReadDir(fs, dirSrc)
+			assert.ErrorIs(t, err, nil, "Failed to read dirSrc contents: %v", err)
+
+			assert.True(t, strings.HasSuffix(finalDest, test.expFoldName), "Folder path should have %s", test.expFoldName)
+
+			destFiles, err := afero.ReadDir(fs, finalDest)
+			assert.ErrorIs(t, err, nil, "Failed to read copied dir contents: %v", err)
+
+			// Ensure that the number of files and directories match
+			assert.Equal(t, len(srcFiles), len(destFiles), "Number of files in source and destination do not match")
+
+			// Further checks can compare individual file names and contents
+			for i, srcFile := range srcFiles {
+				assert.Equal(t, srcFile.Name(), destFiles[i].Name(), "File names do not match")
+			}
+		})
+	}
+
+}
+
+// TestGetUniqueDestinationTabular runs tabular tests for the GetUniqueDestination function
+func TestGetUniqueDestination(t *testing.T) {
+	// Define the test cases
+	tests := []struct {
+		name           string
+		existingFiles  []string // Files that already exist in the destination
+		expectedSuffix string   // Expected suffix for the unique file
+	}{
+		{
+			name:           "No Existing File",
+			existingFiles:  []string{}, // No existing files
+			expectedSuffix: "",         // Should return the original name
+		},
+		{
+			name:           "Single Existing File",
+			existingFiles:  []string{"file.txt"}, // One file exists
+			expectedSuffix: ".1",                 // Should return file.1.txt
+		},
+		{
+			name:           "Multiple Existing Files",
+			existingFiles:  []string{"file.txt", "file.1.txt", "file.2.txt"}, // Multiple files exist
+			expectedSuffix: ".3",                                             // Should return file.3.txt
+		},
+		{
+			name:           "Non-Conflicting File",
+			existingFiles:  []string{"otherfile.txt"}, // Different file exists, no conflict
+			expectedSuffix: "",                        // Should return the original name
+		},
+	}
+
+	fs := afero.NewOsFs()
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// Create a temporary directory
+			tempDir := testutils.CreateTempDir(t, fs)
+
+			// Define the destination file path
+			destPath := filepath.Join(tempDir, "file.txt")
+
+			// Create any existing files needed for the test
+			for _, file := range test.existingFiles {
+				existingFilePath := filepath.Join(tempDir, file)
+				err := afero.WriteFile(fs, existingFilePath, []byte("existing content"), 0644)
+				assert.NoError(t, err, "Failed to create existing file: %s", file)
+			}
+
+			// Call the function under test
+			uniquePath := GetUniqueDestination(destPath)
+
+			// Calculate the expected unique path
+			expectedPath := filepath.Join(tempDir, "file"+test.expectedSuffix+".txt")
+
+			// Verify the result
+			assert.Equal(t, expectedPath, uniquePath, "Unique path mismatch for test case: %s", test.name)
+		})
+	}
+}
+
+// TestTarGz tests the TarGz function with different test cases using tabular testing and afero.
+func TestTarGz(t *testing.T) {
+	// Test cases for the TarGz function
+	tests := []struct {
+		name       string
+		prefix     string
+		encodedPre string
+		overwrite  bool
+		expectErr  error
+	}{
+		{
+			name:       "No prefix new TarGz Archive",
+			prefix:     "",
+			encodedPre: "",
+			overwrite:  true,
+			expectErr:  nil,
+		},
+		{
+			name:       "Prefix new TarGz Archive",
+			prefix:     "ark:/",
+			encodedPre: "ark+=",
+			overwrite:  true,
+			expectErr:  nil,
+		},
+		{
+			name:       "No overwrite or prefix",
+			prefix:     "",
+			encodedPre: "",
+			overwrite:  false,
+			expectErr:  nil,
+		},
+		{
+			name:       "No overwrite with prefix",
+			prefix:     "ark:/",
+			encodedPre: "ark+=",
+			overwrite:  false,
+			expectErr:  nil,
+		},
+	}
+	// Create an afero in-memory filesystem
+	fs := afero.NewOsFs()
+
+	// Loop through each test case
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			dirSrc := testutils.CreateTempDir(t, fs)
+			dirDest := testutils.CreateTempDir(t, fs)
+
+			_ = testutils.CreateFileInDir(t, dirSrc, "file.txt")
+
+			// Call the TarGz function
+			err := TarGz(dirSrc, dirDest, test.prefix, test.overwrite)
+			assert.ErrorIs(t, err, test.expectErr, "There was an Error with TarGZ")
+
+			tarDest := filepath.Join(dirDest, test.encodedPre+filepath.Base(dirSrc)+".tgz")
+
+			// Check if overwrite behavior was respected
+			if !test.overwrite {
+				err = TarGz(dirSrc, dirDest, test.prefix, test.overwrite)
+				assert.ErrorIs(t, err, test.expectErr, "There was an Error with TarGZ")
+
+				tarDest = filepath.Join(dirDest, test.encodedPre+filepath.Base(dirSrc)+".1"+".tgz")
+			}
+			// Check if the tar.gz file was created in the destination directory
+			exists, err := afero.Exists(fs, tarDest)
+			assert.NoError(t, err, "error checking for tar.gz file existence")
+			assert.True(t, exists, ".tgz file does not exist")
+		})
+	}
+}
+
+func TestUnTarGz(t *testing.T) {
+	tests := []struct {
+		name      string
+		addFolder bool
+		srcID     string
+		tgzID     string
+		expectErr error
+	}{
+		{
+			name:      "Untar file properly",
+			addFolder: false,
+			srcID:     "folderID",
+			tgzID:     "folderID",
+			expectErr: nil,
+		},
+		{
+			name:      "Folder in .tgz does not match src folder",
+			addFolder: false,
+			srcID:     "folderID",
+			tgzID:     "folderIDNotMatch",
+			expectErr: error_msgs.Err13,
+		},
+		{
+			name:      "More than one folder exists in .tgz",
+			addFolder: true,
+			srcID:     "folderID",
+			tgzID:     "folderID",
+			expectErr: error_msgs.Err12,
+		},
+	}
+
+	// Create an afero in-memory filesystem
+	fs := afero.NewOsFs()
+
+	// Loop through each test case
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+
+			dirDest := testutils.CreateTempDir(t, fs)
+			dirDest = testutils.CreateDirInDir(t, fs, dirDest, test.srcID)
+
+			//Create the .tgz in a temporary directory
+			tempDir := testutils.CreateTempDir(t, fs)
+			dirTGZ := testutils.CreateDirInDir(t, fs, tempDir, test.tgzID)
+
+			dirSrcTGZ := filepath.Join(tempDir, test.tgzID+".tgz")
+
+			fileNames := []string{"file.txt", "file1.txt", "file2.txt"}
+			for _, fileName := range fileNames {
+				_ = testutils.CreateFileInDir(t, dirTGZ, fileName)
+			}
+			sourceFolders := []string{dirTGZ} 
+
+			if test.addFolder {
+				pathToFolder := testutils.CreateDirInDir(t, fs, tempDir, "extraFolder")
+				sourceFolders = append(sourceFolders, pathToFolder)
+			}
+
+			tgz := archiver.NewTarGz()
+
+			// Archive the source directory
+			if err := tgz.Archive(sourceFolders, dirSrcTGZ); err != nil {
+				t.Fatalf("There was an error archiving the folder %v", err)
+			}
+			err := UnTarGz(dirSrcTGZ, dirDest)
+
+			assert.ErrorIs(t, err, test.expectErr)
 		})
 	}
 }

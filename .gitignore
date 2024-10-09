@@ -23,3 +23,6 @@ go.work.sum
 
 # MacOS system files 
 .DS_Store
+
+# VSCode specific files
+.vscode/*

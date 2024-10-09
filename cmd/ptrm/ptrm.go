@@ -115,6 +115,9 @@ func Run(args []string, writer io.Writer) error {
 		return err
 	}
 
+	if prefix == "" {
+		prefix = pairtree.PtPrefix
+	}
 	// create the pairpath
 	pairPath, err = pairtree.CreatePP(id, ptRoot, prefix)
 

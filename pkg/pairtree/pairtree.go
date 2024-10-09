@@ -6,6 +6,7 @@ package pairtree
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -15,6 +16,9 @@ import (
 
 	error_msgs "github.com/UCLALibrary/pt-tools/pkg/error-msgs"
 	caltech_pairtree "github.com/caltechlibrary/pairtree"
+	"github.com/mholt/archiver/v3"
+	"github.com/otiai10/copy"
+	"github.com/spf13/afero"
 )
 
 // File is the directory tree in JSON
@@ -33,6 +37,8 @@ const (
 	rootDir   = "pairtree_root"
 	prefixDir = "pairtree_prefix"
 	verDir    = "pairtree_version0_1"
+	PtPrefix  = "pt://"
+	tar       = ".tgz"
 )
 
 // IsHidden determines if a file is hidden based on its name.
@@ -117,10 +123,11 @@ func CreatePP(id, ptRoot, prefix string) (string, error) {
 	}
 
 	ptRoot = filepath.Join(ptRoot, rootDir)
-
 	pairPath := caltech_pairtree.Encode(id)
 
+	// enocde ID to add to end of pairpath
 	id = string(caltech_pairtree.CharEncode([]rune(id)))
+
 	pairPath = filepath.Join(pairPath, id)
 	pairPath = filepath.Join(ptRoot, pairPath)
 	return pairPath, nil
@@ -226,4 +233,161 @@ func DeletePairtreeItem(fullPath string) error {
 		return err
 	}
 	return nil
+}
+
+// GetUniqueDestination checks if the destination path exists and appends ".x" (where x is an integer)
+// to avoid overwriting files or directories.
+func GetUniqueDestination(dest string) string {
+	// If the destination does not exist, return it as is.
+	if _, err := os.Stat(dest); os.IsNotExist(err) {
+		return dest
+	}
+
+	// Extract the directory and base name
+	dir := filepath.Dir(dest)
+	base := filepath.Base(dest)
+
+	// Strip the extension from the base name
+	ext := filepath.Ext(base)
+	baseWithoutExt := strings.TrimSuffix(base, ext)
+
+	// Initialize counter for unique names
+	counter := 1
+
+	for {
+		// Construct a new destination path by appending ".x" to the base name without extension
+		newBase := fmt.Sprintf("%s.%d%s", baseWithoutExt, counter, ext)
+		newDest := filepath.Join(dir, newBase)
+
+		// If the new destination does not exist, return it
+		if _, err := os.Stat(newDest); os.IsNotExist(err) {
+			return newDest
+		}
+		counter++
+	}
+}
+
+// CopyFileOrFolder copies a file or folder from src to dest, creating a unique destination if needed.
+// It follows the same behavior as Unix cp with directories.
+func CopyFileOrFolder(src, dest string, overwrite bool) (string, error) {
+	// Get the source file or directory info
+	_, err := os.Stat(src)
+	if err != nil {
+		return "", err
+	}
+
+	// If the destination is a directory, ensure it has the correct path
+	if info, err := os.Stat(dest); err == nil && info.IsDir() {
+		// If dest is a directory, append the base name of the source to dest
+		dest = filepath.Join(dest, filepath.Base(src))
+	} else if strings.HasSuffix(dest, string(os.PathSeparator)) {
+		// If dest ends with '/', treat it as a directory
+		dest = filepath.Join(dest, filepath.Base(src))
+	}
+
+	if !overwrite {
+		// Ensure the destination path is unique
+		dest = GetUniqueDestination(dest)
+	}
+
+	// Perform the copy operation using otiai10/copy
+	err = copy.Copy(src, dest)
+	if err != nil {
+		return "", err
+	}
+
+	return dest, nil
+}
+
+// TarGz compresses the source directory or file into a .tgz archive.
+// If the destination file already exists, it creates a unique destination.
+// The prefix of the pairtree ID will be appended to the .tgz
+func TarGz(src, dest, prefix string, overwrite bool) error {
+	prefix = string(caltech_pairtree.CharEncode([]rune(prefix)))
+
+	// Ensure the destination directory exists
+	if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
+		return fmt.Errorf("could not create destination directory: %w", err)
+	}
+
+	dest = filepath.Join(dest, prefix+filepath.Base(src)+tar)
+
+	if !overwrite {
+		// Generate a unique destination if the file already exists
+		dest = GetUniqueDestination(dest)
+	}
+
+	// Create a new archiver instance for tar.gz
+	tgz := archiver.NewTarGz()
+
+	// Archive the source directory
+	if err := tgz.Archive([]string{src}, dest); err != nil {
+		return fmt.Errorf("could not archive the source: %w", err)
+	}
+
+	return nil
+}
+
+// UnTarGz extracts a tar.gz archive to the specified destination directory.
+// UntarGZ assumes that within the source .tgz file there is a folder that matches the name of
+// the destination. If no such folder exists, UnTarGz will fail
+func UnTarGz(src, dest string) error {
+	id := filepath.Base(dest)
+	fs := afero.NewOsFs()
+
+	tempDir, err := afero.TempDir(fs, "", "temporary")
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		err = errors.Join(err, fs.RemoveAll(tempDir))
+	}()
+
+	// Create a TarGz archiver instance
+	tgz := archiver.TarGz{
+		Tar: &archiver.Tar{
+			OverwriteExisting: true, // Keep this to handle file overwrites in case any remain
+		},
+	}
+
+	// Extract the tar.gz archive to the destination directory
+	if err := tgz.Unarchive(src, tempDir); err != nil {
+		return err
+	}
+
+	// Check if tempDir contains a single folder that matches the pairtree ID
+	files, err := afero.ReadDir(fs, tempDir)
+	if err != nil {
+		return fmt.Errorf("could not read temp directory: %w", err)
+	}
+
+	if len(files) != 1 || !files[0].IsDir() {
+		return error_msgs.Err12
+	}
+
+	// Check if the folder name matches the pairtree ID
+	if files[0].Name() != id {
+		return error_msgs.Err13
+	}
+
+	// Ensure the source file exists
+	if _, err := os.Stat(src); os.IsNotExist(err) {
+		return err
+	}
+
+	// Check if destination directory exists
+	if _, err := os.Stat(dest); err == nil {
+		// If it exists, clean up the destination directory to ensure full overwrite
+		if err := os.RemoveAll(dest); err != nil {
+			return err
+		}
+	}
+
+	// Now you can move the folder from tempDir to the final destination
+	if err := copy.Copy(filepath.Join(tempDir, id), dest); err != nil {
+		return err
+	}
+
+	return err
 }
