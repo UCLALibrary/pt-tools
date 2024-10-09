@@ -44,10 +44,6 @@ func TestDelete(t *testing.T) {
 			tempDir := testutils.CreateTempDir(t, fs)
 			testutils.CopyTestDirectory(t, testutils.TestPairtree, tempDir)
 
-			// Backup original os.Args
-			originalArgs := os.Args
-			defer func() { os.Args = originalArgs }() // Restore os.Args after test
-
 			args := append([]string{root + tempDir}, test.path...)
 			var buf bytes.Buffer
 
@@ -62,11 +58,11 @@ func TestDelete(t *testing.T) {
 func TestCLIError(t *testing.T) {
 	tests := []struct {
 		name      string
-		args      string
+		args      []string
 		expectErr error
 	}{
-		{name: "noID", args: root + "dir", expectErr: error_msgs.Err6},
-		{name: "noRoot", args: "ID", expectErr: error_msgs.Err7},
+		{name: "No ID provided", args: []string{root + "root"}, expectErr: error_msgs.Err6},
+		{name: "No pairtree root provided", args: []string{"ID"}, expectErr: error_msgs.Err7},
 	}
 
 	// Create a logger instance using the registered sink.
@@ -78,9 +74,8 @@ func TestCLIError(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			var buf bytes.Buffer
 
-			args := []string{root + "dir"}
-			err := Run(args, &buf)
-			assert.Error(t, err, "Expected an error but got none")
+			err := Run(test.args, &buf)
+			assert.ErrorIs(t, err, test.expectErr, "Expected an error but got none")
 		})
 	}
 

@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/otiai10/copy"
@@ -120,7 +121,50 @@ func CreateTempDir(t *testing.T, fs afero.Fs) string {
 	return tempDir
 }
 
-// CopyTestDirectory copies all contaents of a directory into a src directory
+// CreateTempFile creates a temporary file with the specified content
+func CreateTempFile(t *testing.T, fs afero.Fs, content []byte) string {
+	// Create a temporary file in the "temp" directory with a specific prefix
+	tempFile, err := afero.TempFile(fs, "", "test-file")
+	if err != nil {
+		t.Fatalf("Failed to create temporary file: %v", err)
+	}
+	defer tempFile.Close()
+
+	// Get the full path to the temporary file
+	tempFilePath := tempFile.Name()
+
+	// Write some data to the temporary file
+	if _, err := tempFile.Write(content); err != nil {
+		t.Fatalf("Failed to write to temporary file: %v", err)
+	}
+	return tempFilePath
+}
+
+// CreateFileInDir creates a file with the given name in the specified directory and returns the path location
+func CreateFileInDir(t *testing.T, dir string, filename string) string {
+	// Join the directory and filename to get the full path of the new file.
+	filePath := filepath.Join(dir, filename)
+
+	// Create the file.
+	file, err := os.Create(filePath)
+	if err != nil {
+		t.Fatalf("Failed to create file: %v", err)
+	}
+	defer file.Close()
+
+	return filePath
+}
+
+func CreateDirInDir(t *testing.T, fs afero.Fs, dir, newDir string) string {
+	dirDest := filepath.Join(dir, newDir)
+	err := fs.MkdirAll(dirDest, 0755) // Creates "subfolder" inside dirSrc
+	if err != nil {
+		t.Fatalf("Failed to create subfolder in dirSrc: %v", err)
+	}
+	return dirDest
+}
+
+// CopyTestDirectory copies all contents of a directory into a src directory
 func CopyTestDirectory(t *testing.T, src, dst string) {
 	err := copy.Copy(src, dst)
 	if err != nil {
@@ -131,4 +175,48 @@ func CopyTestDirectory(t *testing.T, src, dst string) {
 // CleanupFiles removes files that are not necessary
 func CleanupFiles(file string) {
 	os.Remove(file)
+}
+
+func CheckDirCopy(fs afero.Fs, srcDir, destDir, expFolderName string) error {
+	// Check if the destination directory exists
+	exists, err := afero.DirExists(fs, destDir)
+	if err != nil {
+		return fmt.Errorf("failed to check if directory was copied: %w", err)
+	}
+	if !exists {
+		return fmt.Errorf("directory %s was not copied to destination: %s", srcDir, destDir)
+	}
+
+	// Check if source files were read properly
+	srcFiles, err := afero.ReadDir(fs, srcDir)
+	if err != nil {
+		return fmt.Errorf("failed to read source directory contents: %w", err)
+	}
+
+	// Ensure destination folder has the expected suffix
+	if !strings.HasSuffix(destDir, expFolderName) {
+		return fmt.Errorf("destination folder should have suffix %s", expFolderName)
+	}
+
+	// Check if destination files were read properly
+	destFiles, err := afero.ReadDir(fs, destDir)
+	if err != nil {
+		return fmt.Errorf("failed to read destination directory contents: %w", err)
+	}
+
+	// Compare individual file names
+	for _, srcFile := range srcFiles {
+		found := false
+		for _, destFile := range destFiles {
+			if srcFile.Name() == destFile.Name() {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return fmt.Errorf("file %s does not exist in destination directory", srcFile.Name())
+		}
+	}
+
+	return nil
 }

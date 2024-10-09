@@ -5,10 +5,6 @@ package ptls
 // unless the test removes or changes that.
 import (
 	"bytes"
-	"fmt"
-	"io/fs"
-	"os"
-	"path/filepath"
 	"testing"
 
 	error_msgs "github.com/UCLALibrary/pt-tools/pkg/error-msgs"
@@ -18,8 +14,7 @@ import (
 )
 
 const (
-	testDir = "test-pairtree"
-	root    = "--pairtree="
+	root = "--pairtree="
 )
 
 // runTestWithArgs
@@ -93,10 +88,6 @@ func TestRecursive(t *testing.T) {
 			tempDir := testutils.CreateTempDir(t, fs)
 			testutils.CopyTestDirectory(t, testutils.TestPairtree, tempDir)
 
-			// Backup original os.Args
-			originalArgs := os.Args
-			defer func() { os.Args = originalArgs }() // Restore os.Args after test
-
 			args := []string{root + tempDir, "-r", test.id}
 			runTestWithArgs(t, args, test.expected)
 		})
@@ -124,10 +115,6 @@ func TestDirOnly(t *testing.T) {
 			fs := afero.NewOsFs()
 			tempDir := testutils.CreateTempDir(t, fs)
 			testutils.CopyTestDirectory(t, testutils.TestPairtree, tempDir)
-
-			// Backup original os.Args
-			originalArgs := os.Args
-			defer func() { os.Args = originalArgs }() // Restore os.Args after test
 
 			args := []string{root + tempDir, "-d", test.id}
 			runTestWithArgs(t, args, test.expected)
@@ -212,26 +199,6 @@ func TestShowAllRecursive(t *testing.T) {
 			af := afero.NewOsFs()
 			tempDir := testutils.CreateTempDir(t, af)
 			testutils.CopyTestDirectory(t, testutils.TestPairtree, tempDir)
-
-			// List and print the contents of the temporary directory using filepath.WalkDir
-			_ = filepath.WalkDir(tempDir, func(path string, d fs.DirEntry, err error) error {
-				if err != nil {
-					return err
-				}
-
-				if d.IsDir() {
-					fmt.Printf("Directory: %s\n", path)
-				} else {
-					fmt.Printf("File: %s\n", path)
-				}
-
-				// Example check for hidden files/directories
-				if filepath.Base(path)[0] == '.' {
-					fmt.Printf("Hidden: %s\n", path)
-				}
-
-				return nil
-			})
 
 			args := []string{root + tempDir, "-r", "-a", test.id}
 			runTestWithArgs(t, args, test.expected)
