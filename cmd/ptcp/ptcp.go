@@ -44,7 +44,6 @@ func Run(args []string, writer io.Writer) error {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// If the root has not been set yet check the ENV vars
 			if ptRoot == "" {
-
 				if envVar := os.Getenv("PAIRTREE_ROOT"); envVar != "" {
 					ptRoot = envVar
 				} else {
@@ -68,8 +67,7 @@ func Run(args []string, writer io.Writer) error {
 				dest = args[numArgs-1]
 			} else {
 				fmt.Fprintln(writer, "Too many arguments were provided to ptcp")
-				Logger.Error("Error parsing ptcp",
-					zap.Error(error_msgs.Err8))
+				Logger.Error("Error parsing ptcp", zap.Error(error_msgs.Err8))
 
 				return error_msgs.Err8
 			}
@@ -94,8 +92,7 @@ func Run(args []string, writer io.Writer) error {
 	utils.ApplyExitOnHelp(rootCmd, 0)
 
 	if err = rootCmd.Execute(); err != nil {
-		Logger.Error("Error setting command line",
-			zap.Error(err))
+		Logger.Error("Error setting command line", zap.Error(err))
 		return err
 	}
 

@@ -110,7 +110,6 @@ func TestPTCP(t *testing.T) {
 			require.ErrorIs(t, err, test.expectErr)
 
 			if test.expectErr == nil {
-
 				err = testutils.CheckDirCopy(fs, finalSrc, finalDest, filepath.Base(test.pairpath))
 				assert.NoError(t, err, "Expected no error, but got one")
 			}
