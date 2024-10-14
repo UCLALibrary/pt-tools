@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/UCLALibrary/pt-tools/cmd/ptcp"
 	"github.com/UCLALibrary/pt-tools/cmd/ptls"
 	"github.com/UCLALibrary/pt-tools/cmd/ptrm"
 )
@@ -29,6 +30,11 @@ func main() {
 		}
 	case "ptrm":
 		err := ptrm.Run(args, writer)
+		if err != nil {
+			os.Exit(1)
+		}
+	case "ptcp":
+		err := ptcp.Run(args, writer)
 		if err != nil {
 			os.Exit(1)
 		}

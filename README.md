@@ -92,9 +92,9 @@ To produce a tar/gzipped output or unpack a tar/gzipped in the pairtree structur
 
 or 
 
-    ptcp -a [ID] [/path/to/name.tgz]
+    ptcp -a [ID] [/path/to/dest]
 
-This provides a way to archive an item from the pairtree and un-archive it again back into a pairtree structure, but it's not intended as a way to create archives within the pairtree structure. 
+This provides a way to archive an item from the pairtree and un-archive it again back into a pairtree structure, but it's not intended as a way to create archives within the pairtree structure. Only the entire object can be archived from the pairtree meaning the `-a` and `-n` flags should never be used together. When an object is archived, a `.tgz` file will be created and named after the Pairtree object. It will contain a folder that is named the object ID. Unless otherwise specific with the `-d` option, the `.x` pattern will be followed so as not to overwrite other existing `.tgz` files that are named the same. When unarchiving a file into the pairtree, the `.tgz` file should contain a folder named after the pairtree object. The contents of that folder will fully overwrite the contents in the pairtree object. 
 
 ## ptmv
 
