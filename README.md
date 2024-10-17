@@ -56,7 +56,7 @@ To output a recursive listing of the object direcotry, with the default being a 
 
 Ptcp is a cp-like tool that can copy files and folders in and out of the Pairtree structure. Unlike Linux's cp, the default is recursive. Ptcp's defualt behavior will also not overwrite files or directories if they already exist at the specificed location. Instead, it will add `.x` (x being an integer that starts from 1) to the path. 
 
-This cp tool behaves similarly to the unix cp in relation to directories. This means that when you are copying from `SRC` to `DEST` if the folder does not exist, the folder will be created and only the contents of the src will be copied into `DEST`. If the folder does exist, the folder and its contents from `SRC` will be moved into `DEST`. When wanting to copy into a subpath or new path in the pairtree, the `-n` flag will need to be used and is detailed below. At the moment the ability to copy from one pairtree to another pairtree is not available. 
+This cp tool behaves similarly to the unix cp in relation to directories. This means that when you are copying from `SRC` to `DEST` if the folder does not exist, the folder will be created and only the contents of the src will be copied into `DEST`. If the folder does exist, the folder and its contents from `SRC` will be moved into `DEST`. When wanting to copy into a subpath or new path in the pairtree, the `-n` flag will need to be used and is detailed below. When trying to copy a single file from the pairtree into a `Dest` that does not exist, an erorr will be thrown. At the moment the ability to copy from one pairtree to another pairtree is not available. 
 
 When an ENV PAIRTREE_ROOT is set, the basic command is
     
@@ -107,10 +107,6 @@ When an ENV PAIRTREE_ROOT, the basic command is
 When an ENV PAIRTREE_ROOT is not set, the command is 
 
     ptmv [PT_ROOT] [ID] [/path/to/output/]
-
-To specify the path from which to remove files when copying into the Pairtree, use -t as a prefix 
-
-    ptmv -t [/path/to/] [/path/to/file.ext] [ID]
 
 To produce a tar/gzipped output or upack a tar/gzipped in the pairtree structure run 
 
