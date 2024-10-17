@@ -778,6 +778,7 @@ func TestDeletePairtreeItem(t *testing.T) {
 	}
 }
 
+// TestCopyFile tests copying files into directories
 func TestCopyFile(t *testing.T) {
 
 	testFiles := []struct {
@@ -785,11 +786,12 @@ func TestCopyFile(t *testing.T) {
 		fileName       string
 		changeFileName bool
 		overwrite      bool
+		createDest     bool
 		expectError    error
 	}{
 		{
 			testName:       "No overwrite and change file name",
-			fileName:       "newfilename.txt",
+			fileName:       "newfilename",
 			changeFileName: true,
 			overwrite:      true,
 			expectError:    nil,
@@ -861,6 +863,7 @@ func TestCopyFile(t *testing.T) {
 	}
 }
 
+// TestCopyFolder tests copying a directory into another directory
 func TestCopyFolder(t *testing.T) {
 	testFolders := []struct {
 		testName         string
@@ -1140,7 +1143,7 @@ func TestUnTarGz(t *testing.T) {
 			for _, fileName := range fileNames {
 				_ = testutils.CreateFileInDir(t, dirTGZ, fileName)
 			}
-			sourceFolders := []string{dirTGZ} 
+			sourceFolders := []string{dirTGZ}
 
 			if test.addFolder {
 				pathToFolder := testutils.CreateDirInDir(t, fs, tempDir, "extraFolder")

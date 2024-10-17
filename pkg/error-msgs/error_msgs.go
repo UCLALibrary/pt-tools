@@ -16,4 +16,5 @@ var (
 	Err11 = errors.New("the -n and -a options can not be used together in ptcp")
 	Err12 = errors.New("temp directory does not contain exactly one folder")
 	Err13 = errors.New("folder name does not match pairtree ID")
+	Err14 = errors.New("the destination path does not exist and the src is a file")
 )

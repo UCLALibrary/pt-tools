@@ -42,7 +42,7 @@ func Run(args []string, writer io.Writer) error {
 	var pairPath string
 
 	var rootCmd = &cobra.Command{
-		Use:   "ptrm [PT_ROOT] [ID] [subpath/to/file.txt]",
+		Use:   "ptrm -p [PT_ROOT] [ID] [subpath/to/file.txt]",
 		Short: "ptrm is a tool to remove Pairtree objects, files, and directores",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// If the root has not been set yet check the ENV vars

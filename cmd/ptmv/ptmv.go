@@ -1,7 +1,6 @@
-package ptcp
+package ptmv
 
-/* ptcp is a cp-like tool that can copy files in and out of the Pairtree structure.
-Unlike Linux's cp, the default is recursive */
+/* ptmv is a tool that can move files in and out of the Pairtree structure */
 
 import (
 	"fmt"
@@ -18,20 +17,16 @@ import (
 )
 
 var (
-	overwrite bool
-	tar       bool
-	subpath   string
-	ptRoot    string
-	logFile   string      = "logs.log"
-	Logger    *zap.Logger = utils.Logger(logFile)
-	src       string      = ""
-	dest      string      = ""
+	tar     bool
+	ptRoot  string
+	logFile string      = "logs.log"
+	Logger  *zap.Logger = utils.Logger(logFile)
+	src     string      = ""
+	dest    string      = ""
 )
 
 func initFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&ptRoot, "pairtree", "p", "", "Set pairtree root directory")
-	cmd.Flags().BoolVarP(&overwrite, "d", "d", false, "Overwrite target files")
-	cmd.Flags().StringVarP(&subpath, "n", "n", "", "Create subpath to or rename the file or path")
 	cmd.Flags().BoolVarP(&tar, "a", "a", false, "Produce a tar/gzipped output or unpack a tar/gzipped")
 }
 
@@ -39,11 +34,12 @@ func Run(args []string, writer io.Writer) error {
 	var err error
 
 	var rootCmd = &cobra.Command{
-		Use:   "ptcp -p [PT_ROOT] [ID] [/path/to/output]",
-		Short: "ptrm is a tool to copy files and folders in and out of the Pairtree",
+		Use:   "ptmv [PT_ROOT] [ID] [/path/to/output/]",
+		Short: "Ptmv is a tool that can move files in and out of the Pairtree structure",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// If the root has not been set yet check the ENV vars
 			if ptRoot == "" {
+
 				if envVar := os.Getenv("PAIRTREE_ROOT"); envVar != "" {
 					ptRoot = envVar
 				} else {
@@ -55,30 +51,24 @@ func Run(args []string, writer io.Writer) error {
 			numArgs := len(args)
 			if numArgs < 2 {
 				fmt.Fprintln(writer, "Please provide a source and destination for copied files")
-				Logger.Error("There are not enough arguments to ptcp",
+				Logger.Error("There are not enough arguments to ptmv",
 					zap.Error(error_msgs.Err9))
 
 				return error_msgs.Err9
 			}
 
 			if numArgs == 2 {
-				// Extract the ID and the dest from the arguments
+				// Extract the src and dest
 				src = args[numArgs-2]
 				dest = args[numArgs-1]
 			} else {
-				fmt.Fprintln(writer, "Too many arguments were provided to ptcp")
-				Logger.Error("Error parsing ptcp", zap.Error(error_msgs.Err8))
+				fmt.Fprintln(writer, "Too many arguments were provided to ptmv")
+				Logger.Error("Error parsing ptmv", zap.Error(error_msgs.Err8))
 
 				return error_msgs.Err8
 			}
 
-			if tar && subpath != "" {
-				return error_msgs.Err11
-			}
-
-			Logger.Info("Pairtree root is",
-				zap.String("PAIRTREE_ROOT", ptRoot),
-			)
+			Logger.Info("Pairtree root is", zap.String("PAIRTREE_ROOT", ptRoot))
 
 			return nil
 		},
@@ -121,15 +111,7 @@ func Run(args []string, writer io.Writer) error {
 			Logger.Error("Error creating pairpath", zap.Error(err))
 			return err
 		}
-		src = filepath.Join(src, subpath)
-		//if the destination doesnt exist and the src is a file return an error
-		if info, err := os.Stat(src); err == nil && !info.IsDir() {
-			if _, err := os.Stat(dest); os.IsNotExist(err) {
-				Logger.Error("Error with destination", zap.Error(error_msgs.Err14))
-				return error_msgs.Err14
-			}
-		}
-
+		src = filepath.Join(src)
 		srcIsPairtree = true
 	} else if strings.HasPrefix(dest, prefix) {
 		if dest, err = pairtree.CreatePP(dest, ptRoot, prefix); err != nil {
@@ -139,7 +121,7 @@ func Run(args []string, writer io.Writer) error {
 		if err = pairtree.CreateDirNotExist(dest); err != nil {
 			return err
 		}
-		dest = filepath.Join(dest, subpath)
+		dest = filepath.Join(dest)
 	} else {
 		fmt.Fprintln(writer,
 			"Neither the source or destination contains a prefix and is not a part of the pairtree")
@@ -151,9 +133,13 @@ func Run(args []string, writer io.Writer) error {
 	fmt.Printf("This is the src: %s \n", src)
 	fmt.Printf("This is the dest: %s \n", dest)
 
+	if err := os.RemoveAll(dest); err != nil {
+		return fmt.Errorf("failed to remove %s: %w", dest, err)
+	}
+
 	if tar {
 		if srcIsPairtree {
-			if err = pairtree.TarGz(src, dest, prefix, overwrite); err != nil {
+			if err = pairtree.TarGz(src, dest, prefix, true); err != nil {
 				Logger.Error("Error compressing pairtree object", zap.Error(err))
 				return err
 			}
@@ -164,7 +150,8 @@ func Run(args []string, writer io.Writer) error {
 			}
 		}
 	} else {
-		finalDest, err := pairtree.CopyFileOrFolder(src, dest, overwrite)
+
+		finalDest, err := pairtree.CopyFileOrFolder(src, dest, true)
 
 		if err != nil {
 			Logger.Error("Error copying source to destination", zap.Error(err))
@@ -175,5 +162,8 @@ func Run(args []string, writer io.Writer) error {
 		}
 	}
 
+	if err := os.RemoveAll(src); err != nil {
+		return fmt.Errorf("failed to remove %s: %w", src, err)
+	}
 	return nil
 }
