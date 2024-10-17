@@ -105,6 +105,17 @@ func CheckPTVer(ptRoot string) error {
 	}
 }
 
+// CreateDirNotExist creates a directory if the path does not exist
+func CreateDirNotExist(path string) error {
+	// If the destination is a directory, ensure it has the correct path
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		if err := os.MkdirAll(path, 0755); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // CreatePP creates the full pairpath given the root, id, and prefix giving the pairpath to an object
 func CreatePP(id, ptRoot, prefix string) (string, error) {
 	if strings.TrimSpace(ptRoot) == "" {

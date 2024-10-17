@@ -6,6 +6,7 @@ import (
 
 	"github.com/UCLALibrary/pt-tools/cmd/ptcp"
 	"github.com/UCLALibrary/pt-tools/cmd/ptls"
+	"github.com/UCLALibrary/pt-tools/cmd/ptmv"
 	"github.com/UCLALibrary/pt-tools/cmd/ptrm"
 )
 
@@ -35,6 +36,11 @@ func main() {
 		}
 	case "ptcp":
 		err := ptcp.Run(args, writer)
+		if err != nil {
+			os.Exit(1)
+		}
+	case "ptmv":
+		err := ptmv.Run(args, writer)
 		if err != nil {
 			os.Exit(1)
 		}
