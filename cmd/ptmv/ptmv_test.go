@@ -1,7 +1,8 @@
-package ptcp
+package ptmv
 
 import (
 	"bytes"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -17,37 +18,26 @@ const (
 	rootDir = "pairtree_root"
 )
 
-// Test the basic copy functionality of PTCP
-func TestPTCP(t *testing.T) {
+// Test the basic functionality of ptmv
+func TestPTMV(t *testing.T) {
 	tests := []struct {
 		name      string
 		src       string
 		dest      string
-		subpath   string
 		pairpath  string
 		expectErr error
 	}{
 		{
-			name:      "src is pairtree no subpath",
+			name:      "src is pairtree",
 			src:       "ark:/b5488",
 			dest:      "",
 			pairpath:  filepath.Join("b5", "48", "8", "b5488"),
-			subpath:   "",
 			expectErr: nil,
 		},
 		{
-			name:      "src is pairtree has subpath",
-			src:       "ark:/b5488",
-			dest:      "",
-			subpath:   "folder",
-			pairpath:  filepath.Join("b5", "48", "8", "b5488", "folder"),
-			expectErr: nil,
-		},
-		{
-			name:      "dest is pairtree no subpath",
+			name:      "dest is pairtree",
 			src:       "",
 			dest:      "ark:/b5488",
-			subpath:   "",
 			pairpath:  filepath.Join("b5", "48", "8", "b5488"),
 			expectErr: nil,
 		},
@@ -55,31 +45,13 @@ func TestPTCP(t *testing.T) {
 			name:      "dest is new pairtree",
 			src:       "",
 			dest:      "ark:/b2345",
-			subpath:   "",
 			pairpath:  filepath.Join("b2", "34", "5", "b2345"),
-			expectErr: nil,
-		},
-		{
-			name:      "dest does not exist source is file",
-			src:       "ark:/b5488",
-			dest:      "",
-			subpath:   "outerb5488.txt",
-			pairpath:  filepath.Join("b5", "48", "8", "b5488", "outerb5488.txt"),
-			expectErr: error_msgs.Err14,
-		},
-		{
-			name:      "dest is pairtree has subpath",
-			src:       "",
-			dest:      "ark:/b5488",
-			subpath:   "folder",
-			pairpath:  filepath.Join("b5", "48", "8", "b5488", "folder"),
 			expectErr: nil,
 		},
 		{
 			name:      "src and dest are both not pairtree",
 			src:       "source",
 			dest:      "",
-			subpath:   "",
 			pairpath:  "",
 			expectErr: error_msgs.Err10,
 		},
@@ -97,39 +69,29 @@ func TestPTCP(t *testing.T) {
 			var buf bytes.Buffer
 			var args []string
 			var finalSrc string
-			var finalDest string
 			srcDir := testutils.CreateTempDir(t, fs)
-			destDir := ""
-			if test.name != "dest does not exist source is file" {
-				destDir = testutils.CreateTempDir(t, fs)
-			}
+			destDir := testutils.CreateTempDir(t, fs)
 			if test.src == "" {
 				//pairtree is the dest
 				testutils.CopyTestDirectory(t, testutils.TestPairtree, destDir)
 				// create file to copy to dest
 				fileInSrc := testutils.CreateFileInDir(t, srcDir, "file.txt")
 				args = []string{root + destDir, fileInSrc, test.dest}
-				finalSrc = srcDir
-				finalDest = filepath.Join(destDir, rootDir, test.pairpath)
-
+				finalSrc = fileInSrc
 			} else {
 				// pairtree is the src
 				testutils.CopyTestDirectory(t, testutils.TestPairtree, srcDir)
 				args = []string{root + srcDir, test.src, destDir}
 				finalSrc = filepath.Join(srcDir, rootDir, test.pairpath)
-				finalDest = filepath.Join(destDir, filepath.Base(test.pairpath))
-			}
-
-			if test.subpath != "" {
-				args = append(args, "-n"+test.subpath)
 			}
 
 			err := Run(args, &buf)
 			require.ErrorIs(t, err, test.expectErr)
 
+			// check if the src file or directory was deleted
 			if test.expectErr == nil {
-				err = testutils.CheckDirCopy(fs, finalSrc, finalDest, filepath.Base(test.pairpath))
-				assert.NoError(t, err, "Expected no error, but got one")
+				_, err = os.Stat(finalSrc)
+				assert.True(t, os.IsNotExist(err), "Expected path to not exist, but got: %v", err)
 			}
 		})
 	}
@@ -146,11 +108,11 @@ func TestTar(t *testing.T) {
 	tgzFile := "ark+=a5388.tgz"
 
 	err := testutils.TarCli(t, Run, src, tgzFile)
-	assert.ErrorIs(t, err, nil, "There was an error with the Tar aspect of ptcp %v", err)
+	assert.ErrorIs(t, err, nil, "There was an error with the Tar aspect of ptmv %v", err)
 
 }
 
-// TestUnTar tests untarring a .tgz into a pairtree object
+// TestUnTar tests a .tgz file is properly untarred into the pairtree
 func TestUnTar(t *testing.T) {
 	// Create a logger instance using the registered sink.
 	logger, cleanup := testutils.SetupLogger(logFile)
@@ -161,7 +123,7 @@ func TestUnTar(t *testing.T) {
 	pairpath := filepath.Join(rootDir, "a5", "38", "8", "a5388")
 	ppBase := "a5388"
 
-	err := testutils.UntarCLI(t, Run, dest, pairpath, ppBase, false)
+	err := testutils.UntarCLI(t, Run, dest, pairpath, ppBase, true)
 	assert.ErrorIs(t, err, nil)
 }
 
@@ -186,11 +148,6 @@ func TestCLIError(t *testing.T) {
 			name:      "Too few arguments passed in",
 			args:      []string{root + "root", "ID"},
 			expectErr: error_msgs.Err9,
-		},
-		{
-			name:      "Tar and subpath option are both used",
-			args:      []string{root + "root", "ID", "Destination", "-a", "-n" + "subpath"},
-			expectErr: error_msgs.Err11,
 		},
 	}
 

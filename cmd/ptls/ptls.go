@@ -57,7 +57,7 @@ func Run(args []string, writer io.Writer) error {
 	var pairPath string
 
 	var rootCmd = &cobra.Command{
-		Use:   "ptls [PT_ROOT] [FLAGS] [ID]",
+		Use:   "ptls -p [PT_ROOT] [FLAGS] [ID]",
 		Short: "ptls is a tool to list Pairtree object directories.",
 		Long:  "A tool to list contents of Pairtree object directories with various options.",
 		RunE: func(cmd *cobra.Command, args []string) error {
