@@ -7,7 +7,6 @@ import (
 
 	error_msgs "github.com/UCLALibrary/pt-tools/pkg/error-msgs"
 	"github.com/UCLALibrary/pt-tools/testutils"
-	"github.com/mholt/archiver/v3"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -138,85 +137,32 @@ func TestPTCP(t *testing.T) {
 
 // TestTar tests if an object in the pairtree is properly tared outside of it
 func TestTar(t *testing.T) {
-	var buf bytes.Buffer
-	var args []string
-	src := "ark:/a5388"
-	tgzFile := "ark+=a5388.tgz"
-
 	// Create a logger instance using the registered sink.
 	logger, cleanup := testutils.SetupLogger(logFile)
 	defer cleanup()
 	Logger = logger
 
-	fs := afero.NewOsFs()
+	src := "ark:/a5388"
+	tgzFile := "ark+=a5388.tgz"
 
-	srcDir := testutils.CreateTempDir(t, fs)
-	testutils.CopyTestDirectory(t, testutils.TestPairtree, srcDir)
+	err := testutils.TarCli(t, Run, src, tgzFile)
+	assert.ErrorIs(t, err, nil, "There was an error with the Tar aspect of ptcp %v", err)
 
-	destDir := testutils.CreateTempDir(t, fs)
-	destDir = filepath.Join(destDir, tgzFile)
-
-	args = []string{root + srcDir, src, destDir, "-a"}
-
-	err := Run(args, &buf)
-	require.ErrorIs(t, err, nil)
-
-	// Check if the destination file exists
-	exists, err := afero.Exists(fs, destDir)
-	assert.ErrorIs(t, err, nil, "Failed to check if dirSrc was copied: %v", err)
-	assert.True(t, exists, "File was not copied to destination")
 }
 
 // TestUnTar tests untarring a .tgz into a pairtree object
 func TestUnTar(t *testing.T) {
-	var buf bytes.Buffer
-	var args []string
+	// Create a logger instance using the registered sink.
+	logger, cleanup := testutils.SetupLogger(logFile)
+	defer cleanup()
+	Logger = logger
 
 	dest := "ark:/a5388"
 	pairpath := filepath.Join(rootDir, "a5", "38", "8", "a5388")
 	ppBase := "a5388"
 
-	// Create a logger instance using the registered sink.
-	logger, cleanup := testutils.SetupLogger(logFile)
-	defer cleanup()
-	Logger = logger
-
-	fs := afero.NewOsFs()
-	srcDir := testutils.CreateTempDir(t, fs)
-	destDir := testutils.CreateTempDir(t, fs)
-	pairpath = filepath.Join(destDir, pairpath)
-
-	testutils.CopyTestDirectory(t, testutils.TestPairtree, destDir)
-
-	// Add files to src and .tgz file
-	dirTGZ := testutils.CreateDirInDir(t, fs, srcDir, ppBase)
-
-	dirSrcTGZ := filepath.Join(srcDir, ppBase+".tgz")
-
-	fileNames := []string{"file.txt", "file1.txt", "file2.txt"}
-	for _, fileName := range fileNames {
-		_ = testutils.CreateFileInDir(t, dirTGZ, fileName)
-	}
-
-	// Archive the source directory
-	tgz := archiver.NewTarGz()
-
-	if err := tgz.Archive([]string{dirTGZ}, dirSrcTGZ); err != nil {
-		t.Fatalf("There was an error archiving the folder %v", err)
-	}
-
-	args = []string{root + destDir, dirSrcTGZ, dest, "-a"}
-	err := Run(args, &buf)
-	require.ErrorIs(t, err, nil)
-
-	// Check if source files were read properly
-	files, err := afero.ReadDir(fs, pairpath)
-	assert.ErrorIs(t, err, nil, "Failed to read dirSrc contents: %v", err)
-
-	// Further checks can compare individual file names and contents
-	for i, srcFile := range files {
-		assert.Equal(t, srcFile.Name(), fileNames[i], "File names do not match")
-	}
+	err := testutils.UntarCLI(t, Run, dest, pairpath, ppBase, false)
+	assert.ErrorIs(t, err, nil)
 }
 
 // TestCLIError tests if an error is thrown when various CLI options are missing or are wrong

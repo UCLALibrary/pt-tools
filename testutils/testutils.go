@@ -2,6 +2,7 @@ package testutils
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"net/url"
@@ -10,10 +11,15 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mholt/archiver"
 	"github.com/otiai10/copy"
 	"github.com/spf13/afero"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+)
+
+const (
+	root = "--pairtree="
 )
 
 // Path to the test pairtree directory
@@ -25,6 +31,8 @@ var (
 type MemorySink struct {
 	*bytes.Buffer
 }
+
+type RunFunc func(args []string, writer io.Writer) error
 
 // Implement Close and Sync as no-ops to satisfy the interface. The Write
 // method is provided by the embedded buffer.
@@ -218,5 +226,95 @@ func CheckDirCopy(fs afero.Fs, srcDir, destDir, expFolderName string) error {
 		}
 	}
 
+	return nil
+}
+
+func UntarCLI(t *testing.T, runFunc RunFunc, dest, pairpath, ppBase string, checkSrc bool) error {
+	var buf bytes.Buffer
+	// dest := "ark:/a5388"
+	// pairpath := filepath.Join(rootDir, "a5", "38", "8", "a5388")
+	// ppBase := "a5388"
+
+	fs := afero.NewOsFs()
+	srcDir := CreateTempDir(t, fs)
+	destDir := CreateTempDir(t, fs)
+	pairpath = filepath.Join(destDir, pairpath)
+
+	CopyTestDirectory(t, TestPairtree, destDir)
+
+	// Add files to src and .tgz file
+	dirTGZ := CreateDirInDir(t, fs, srcDir, ppBase)
+
+	dirSrcTGZ := filepath.Join(srcDir, ppBase+".tgz")
+
+	fileNames := []string{"file.txt", "file1.txt", "file2.txt"}
+	for _, fileName := range fileNames {
+		_ = CreateFileInDir(t, dirTGZ, fileName)
+	}
+
+	// Archive the source directory
+	tgz := archiver.NewTarGz()
+
+	if err := tgz.Archive([]string{dirTGZ}, dirSrcTGZ); err != nil {
+		return err
+	}
+
+	args := []string{root + destDir, dirSrcTGZ, dest, "-a"}
+	err := runFunc(args, &buf)
+	if err != nil {
+		return err
+	}
+
+	// Check if source files were read properly
+	files, err := afero.ReadDir(fs, pairpath)
+	if err != nil {
+		return err
+	}
+
+	// Further checks can compare individual file names and contents
+	for i, srcFile := range files {
+		if srcFile.Name() != fileNames[i] {
+			return fmt.Errorf("filenames after being untarred do not match: %s,%s", srcFile.Name(), fileNames[i])
+		}
+	}
+
+	if checkSrc {
+		_, err = os.Stat(dirSrcTGZ)
+		if !os.IsNotExist(err) {
+			return fmt.Errorf("the source directory should not exist, but it does %w", err)
+		}
+	}
+
+	return nil
+}
+
+func TarCli(t *testing.T, runFunc RunFunc, src, tgzFile string) error {
+	var buf bytes.Buffer
+	var args []string
+
+	fs := afero.NewOsFs()
+
+	srcDir := CreateTempDir(t, fs)
+	CopyTestDirectory(t, TestPairtree, srcDir)
+
+	destDir := CreateTempDir(t, fs)
+	destDir = filepath.Join(destDir, tgzFile)
+
+	args = []string{root + srcDir, src, destDir, "-a"}
+
+	err := runFunc(args, &buf)
+	if err != nil {
+		return err
+	}
+
+	// Check if the destination file exists
+	exists, err := afero.Exists(fs, destDir)
+	if err != nil {
+		return fmt.Errorf("the directory sory was not properly copied: %w", err)
+	}
+
+	if !exists {
+		return errors.New("tar file was not properly copied to the desitnation")
+	}
 	return nil
 }
