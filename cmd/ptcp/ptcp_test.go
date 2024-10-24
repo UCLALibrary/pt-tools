@@ -145,7 +145,7 @@ func TestTar(t *testing.T) {
 	src := "ark:/a5388"
 	tgzFile := "ark+=a5388.tgz"
 
-	err := testutils.TarCli(t, Run, src, tgzFile)
+	err := testutils.TarCLI(t, Run, src, tgzFile)
 	assert.ErrorIs(t, err, nil, "There was an error with the Tar aspect of ptcp %v", err)
 
 }

@@ -39,6 +39,7 @@ const (
 	verDir    = "pairtree_version0_1"
 	PtPrefix  = "pt://"
 	tar       = ".tgz"
+	ptVerSpec = "This directory conforms to Pairtree Version 0.1. Updated spec: http://www.cdlib.org/inside/diglib/pairtree/pairtreespec.html "
 )
 
 // IsHidden determines if a file is hidden based on its name.
@@ -107,12 +108,60 @@ func CheckPTVer(ptRoot string) error {
 
 // CreateDirNotExist creates a directory if the path does not exist
 func CreateDirNotExist(path string) error {
+	if strings.TrimSpace(path) == "" {
+		return error_msgs.Err15
+	}
 	// If the destination is a directory, ensure it has the correct path
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		if err := os.MkdirAll(path, 0755); err != nil {
 			return err
 		}
 	}
+	return nil
+}
+
+// CreatePairtree creates the pairtree strucutre including the root dir, version file, and prefix file
+func CreatePairtree(ptRoot, prefix string) error {
+	if strings.TrimSpace(ptRoot) == "" {
+		return error_msgs.Err15
+	}
+
+	// create the pairtree root directory if it does not exist
+	if err := CreateDirNotExist(ptRoot); err != nil {
+		return fmt.Errorf("there was an error creating the ptroot: %w", err)
+	}
+
+	ptPreFilePath := filepath.Join(ptRoot, prefixDir)
+	ptVerFilePath := filepath.Join(ptRoot, verDir)
+	ptRootDirPath := filepath.Join(ptRoot, rootDir)
+
+	// create the prefixFile
+	ptPreFile, err := os.Create(ptPreFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to create file: %w", err)
+	}
+	defer ptPreFile.Close()
+
+	if _, err := ptPreFile.WriteString(prefix); err != nil {
+		return fmt.Errorf("failed to write to pairtree_version file: %w", err)
+	}
+
+	// create the version file
+	ptVerFile, err := os.Create(ptVerFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to create file: %w", err)
+	}
+	defer ptVerFile.Close()
+
+	if _, err := ptVerFile.WriteString(ptVerSpec); err != nil {
+		return fmt.Errorf("failed to write to pairtree_version file: %w", err)
+	}
+
+	// create the pairtree_root dir
+	if err := CreateDirNotExist(ptRootDirPath); err != nil {
+		return fmt.Errorf("there was an error creating the pt_root directory: %w", err)
+	}
+
 	return nil
 }
 
