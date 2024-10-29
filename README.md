@@ -16,6 +16,63 @@ or to build and run tests and checkstyles use the command
     
     make
 
+## ptnew
+
+Ptnew is a tool that creates a new pairtree. The PAIRTREE_ROOT must be set either with an ENV PAIRTREE_ROOT or with a flag otherwise an error will be thrown. The PAIRTREE_ROOT may contain subdirectories, and if the directories do not exist, they will be created. Setting PARITREE_ROOT to `directory/innerdirectory` would be put the pairtree into `innerdirectory` contained inside of `directory`.
+
+The basic command when the ENV PAIRTREE_ROOT is not set
+
+    ptnew --pairtree [PT_ROOT]
+
+or
+
+    ptnew -p [PT_ROOT]
+
+The prefix file is left empty unless specificed by the user using the `--prefix` flag.
+
+    ptnew --prefix [PREFIX]
+
+or 
+
+    ptnew -x [PREFIX]
+
+## ptls 
+
+Ptls is a ls-like tool that can display the contents of the Pairtree object. The basic command is `ptls [ID]` (when an ENV PAIRTREE_ROOT is set) or `ptls [PT_ROOT] [ID]` with the output listing the contents of the Pairtree object directory. This pattern holds with all options of `ptls` except `ptls -h`. No flags need to be used, but all flags can be used depending on user needs.  
+
+The basic command is  
+
+    ptls [ID]
+
+or when the ENV PAIRTREE_ROOT is not set 
+
+    ptls --pairtree [PT_ROOT] [ID]
+
+or 
+
+    ptls -p [PT_ROOT] [ID]
+
+For ptls help run 
+
+    ptls -h
+
+To list all files including . and .. directories run 
+
+    ptls -a
+
+To list directories of the object directory run 
+
+    ptls -d
+
+To return output in a JSON structure instead of a string output run 
+
+    ptls -j
+
+To output a recursive listing of the object direcotry, with the default being a non-recurseive listing run: 
+
+    ptls -r
+
+
 ## ptls 
 
 Ptls is a ls-like tool that can display the contents of the Pairtree object. The basic command is `ptls [ID]` (when an ENV PAIRTREE_ROOT is set) or `ptls [PT_ROOT] [ID]` with the output listing the contents of the Pairtree object directory. This pattern holds with all options of `ptls` except `ptls -h`. No flags need to be used, but all flags can be used depending on user needs.  
@@ -56,7 +113,7 @@ To output a recursive listing of the object direcotry, with the default being a 
 
 Ptcp is a cp-like tool that can copy files and folders in and out of the Pairtree structure. Unlike Linux's cp, the default is recursive. Ptcp's defualt behavior will also not overwrite files or directories if they already exist at the specificed location. Instead, it will add `.x` (x being an integer that starts from 1) to the path. 
 
-This cp tool behaves similarly to the unix cp in relation to directories. This means that when you are copying from `SRC` to `DEST` if the folder does not exist, the folder will be created and only the contents of the src will be copied into `DEST`. If the folder does exist, the folder and its contents from `SRC` will be moved into `DEST`. When wanting to copy into a subpath or new path in the pairtree, the `-n` flag will need to be used and is detailed below. When trying to copy a single file from the pairtree into a `Dest` that does not exist, an erorr will be thrown. At the moment the ability to copy from one pairtree to another pairtree is not available. 
+This cp tool behaves similarly to the unix cp in relation to directories. This means that when you are copying from `SRC` to `DEST` if the folder does not exist, the folder will be created and only the contents of the src will be copied into `DEST`. If the folder does exist, the folder and its contents from `SRC` will be moved into `DEST`. When wanting to copy into a subpath or new path in the pairtree, the `-n` flag will need to be used and is detailed below. At the moment the ability to copy from one pairtree to another pairtree is not available. 
 
 When an ENV PAIRTREE_ROOT is set, the basic command is
     
