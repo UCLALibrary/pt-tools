@@ -42,43 +42,6 @@ Ptls is a ls-like tool that can display the contents of the Pairtree object. The
 
 The basic command is  
 
-    ptls [ID]
-
-or when the ENV PAIRTREE_ROOT is not set 
-
-    ptls --pairtree [PT_ROOT] [ID]
-
-or 
-
-    ptls -p [PT_ROOT] [ID]
-
-For ptls help run 
-
-    ptls -h
-
-To list all files including . and .. directories run 
-
-    ptls -a
-
-To list directories of the object directory run 
-
-    ptls -d
-
-To return output in a JSON structure instead of a string output run 
-
-    ptls -j
-
-To output a recursive listing of the object direcotry, with the default being a non-recurseive listing run: 
-
-    ptls -r
-
-
-## ptls 
-
-Ptls is a ls-like tool that can display the contents of the Pairtree object. The basic command is `ptls [ID]` (when an ENV PAIRTREE_ROOT is set) or `ptls [PT_ROOT] [ID]` with the output listing the contents of the Pairtree object directory. This pattern holds with all options of `ptls` except `ptls -h`. No flags need to be used, but all flags can be used depending on user needs.  
-
-The basic command is  
-
     ptls "[ID]"
 
 or when the ENV PAIRTREE_ROOT is not set 
