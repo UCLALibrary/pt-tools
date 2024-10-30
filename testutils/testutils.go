@@ -163,6 +163,7 @@ func CreateFileInDir(t *testing.T, dir string, filename string) string {
 	return filePath
 }
 
+// CreateDirInDir creates a directory in a directory
 func CreateDirInDir(t *testing.T, fs afero.Fs, dir, newDir string) string {
 	dirDest := filepath.Join(dir, newDir)
 	err := fs.MkdirAll(dirDest, 0755) // Creates "subfolder" inside dirSrc
@@ -185,6 +186,7 @@ func CleanupFiles(file string) {
 	os.Remove(file)
 }
 
+// CheckDirCopy checks if the a directory was fully copied to another directory
 func CheckDirCopy(fs afero.Fs, srcDir, destDir, expFolderName string) error {
 	// Check if the destination directory exists
 	exists, err := afero.DirExists(fs, destDir)
@@ -229,11 +231,9 @@ func CheckDirCopy(fs afero.Fs, srcDir, destDir, expFolderName string) error {
 	return nil
 }
 
+// UntarCLI is the untar testing for ptmv and ptcp untar component
 func UntarCLI(t *testing.T, runFunc RunFunc, dest, pairpath, ppBase string, checkSrc bool) error {
 	var buf bytes.Buffer
-	// dest := "ark:/a5388"
-	// pairpath := filepath.Join(rootDir, "a5", "38", "8", "a5388")
-	// ppBase := "a5388"
 
 	fs := afero.NewOsFs()
 	srcDir := CreateTempDir(t, fs)
@@ -288,7 +288,8 @@ func UntarCLI(t *testing.T, runFunc RunFunc, dest, pairpath, ppBase string, chec
 	return nil
 }
 
-func TarCli(t *testing.T, runFunc RunFunc, src, tgzFile string) error {
+// TarCLI is the tar testing for ptmv and ptcp tar component
+func TarCLI(t *testing.T, runFunc RunFunc, src, tgzFile string) error {
 	var buf bytes.Buffer
 	var args []string
 
@@ -310,11 +311,29 @@ func TarCli(t *testing.T, runFunc RunFunc, src, tgzFile string) error {
 	// Check if the destination file exists
 	exists, err := afero.Exists(fs, destDir)
 	if err != nil {
-		return fmt.Errorf("the directory sory was not properly copied: %w", err)
+		return fmt.Errorf("the directory was not properly copied: %w", err)
 	}
 
 	if !exists {
 		return errors.New("tar file was not properly copied to the desitnation")
 	}
 	return nil
+}
+
+// OpenFileAndCheck check the contents of a file
+func OpenFileAndCheck(fs afero.Fs, filePath string) ([]byte, error) {
+	// Open the file
+	file, err := fs.Open(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open file: %w", err)
+	}
+	defer file.Close() // Ensure the file is closed after we're done
+
+	// Read the content of the file
+	content, err := afero.ReadAll(file)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read file: %w", err)
+	}
+
+	return content, nil
 }

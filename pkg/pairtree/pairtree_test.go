@@ -15,6 +15,7 @@ import (
 	"github.com/otiai10/copy"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -486,6 +487,153 @@ func TestCheckPTVer(t *testing.T) {
 		})
 	}
 
+}
+
+func TestCreateDirNotExist(t *testing.T) {
+	// Define an in-memory filesystem using afero
+	fs := afero.NewOsFs()
+
+	// Define test cases
+	tests := []struct {
+		name     string
+		path     string
+		setup    func(afero.Fs, string) error
+		expected error
+	}{
+		{
+			name: "directory does not exist",
+			path: "testdir_not_exist",
+			setup: func(fs afero.Fs, path string) error {
+				// Ensure the directory does not exist before the test
+				return fs.RemoveAll(path)
+			},
+			expected: nil,
+		},
+		{
+			name: "directory already exists",
+			path: "testdir_exist",
+			setup: func(fs afero.Fs, path string) error {
+				// Create the directory before the test
+				return fs.MkdirAll(path, 0755)
+			},
+			expected: nil,
+		},
+		{
+			name: "path is not allowed",
+			path: "",
+			setup: func(fs afero.Fs, path string) error {
+				return nil
+			},
+			expected: error_msgs.Err15,
+		},
+	}
+
+	// Run each test case
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// Perform the setup for each test case
+			if err := test.setup(fs, test.path); err != nil {
+				t.Fatalf("Failed setup: %v", err)
+			}
+
+			// Call the function under test
+			err := CreateDirNotExist(test.path)
+
+			// Check the result
+			if test.expected != nil {
+				assert.Error(t, err)
+				assert.IsType(t, test.expected, err)
+			} else {
+				assert.NoError(t, err)
+
+				// Verify the directory was created if it did not exist
+				exists, statErr := afero.DirExists(fs, test.path)
+				if statErr != nil || !exists {
+					t.Errorf("expected directory to exist: %s", test.path)
+				}
+			}
+		})
+	}
+}
+
+// TestCreatePairtree tests the CreatePairtree function with no prefix and a prefix provided
+func TestCreatePairtree(t *testing.T) {
+	// Define test cases
+	tests := []struct {
+		name     string
+		path     string
+		prefix   string
+		expected error
+	}{
+		{
+			name:     "no prefix",
+			path:     "testdir",
+			prefix:   "",
+			expected: nil,
+		},
+		{
+			name:     "has prefix",
+			path:     "testDir",
+			prefix:   prefix,
+			expected: nil,
+		},
+		{
+			name:     "has subdirectories",
+			path:     filepath.Join("directory", "subdirectory"),
+			prefix:   prefix,
+			expected: nil,
+		},
+		{
+			name:     "path is not allowed",
+			path:     "  ",
+			prefix:   "",
+			expected: error_msgs.Err15,
+		},
+	}
+
+	fs := afero.NewOsFs()
+
+	// Run each test case
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var err error
+			var tempDir string
+
+			if strings.TrimSpace(test.path) == "" {
+				tempDir = test.path
+			} else {
+				tempDir = testutils.CreateTempDir(t, fs)
+				tempDir = filepath.Join(tempDir, test.path)
+			}
+
+			err = CreatePairtree(tempDir, prefix)
+			require.ErrorIs(t, err, test.expected)
+
+			if test.expected == nil {
+				ptPreFilePath := filepath.Join(tempDir, prefixDir)
+				ptVerFilePath := filepath.Join(tempDir, verDir)
+				ptRootDirPath := filepath.Join(tempDir, rootDir)
+
+				// check prefix
+				ptPre, err := testutils.OpenFileAndCheck(fs, ptPreFilePath)
+				assert.ErrorIs(t, err, nil, "There was an error opening the prefix file")
+				ptPreStirng := string(ptPre)
+				assert.Equal(t, prefix, ptPreStirng, "The prefix in the file did not match the prefix given to CreatePairtree()")
+
+				// check version
+				ptVerContent, err := testutils.OpenFileAndCheck(fs, ptVerFilePath)
+				assert.ErrorIs(t, err, nil, "There was an error opening the prefix file")
+				ptVerString := string(ptVerContent)
+				assert.Equal(t, ptVerSpec, ptVerString, "The version in the file did not match the expected version")
+				//check if the directory was created
+
+				// Use os.Stat to get the file info for the path
+				info, err := os.Stat(ptRootDirPath)
+				assert.ErrorIs(t, err, nil, "There was an error with creating the pt_root dir")
+				assert.True(t, info.IsDir(), "The pt_root is not appearing as a directory")
+			}
+		})
+	}
 }
 
 // TestBuildDirectoryTree tests the BuildDirectoryTree function
