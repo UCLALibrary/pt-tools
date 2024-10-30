@@ -40,7 +40,7 @@ func Run(args []string, writer io.Writer) error {
 
 	var rootCmd = &cobra.Command{
 		Use:   "ptcp -p [PT_ROOT] [ID] [/path/to/output]",
-		Short: "ptrm is a tool to copy files and folders in and out of the Pairtree",
+		Short: "ptcp is a tool to copy files and folders in and out of the Pairtree",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// If the root has not been set yet check the ENV vars
 			if ptRoot == "" {
@@ -122,14 +122,6 @@ func Run(args []string, writer io.Writer) error {
 			return err
 		}
 		src = filepath.Join(src, subpath)
-		//if the destination doesnt exist and the src is a file return an error
-		if info, err := os.Stat(src); err == nil && !info.IsDir() {
-			if _, err := os.Stat(dest); os.IsNotExist(err) {
-				Logger.Error("Error with destination", zap.Error(error_msgs.Err14))
-				return error_msgs.Err14
-			}
-		}
-
 		srcIsPairtree = true
 	} else if strings.HasPrefix(dest, prefix) {
 		if dest, err = pairtree.CreatePP(dest, ptRoot, prefix); err != nil {

@@ -60,14 +60,6 @@ func TestPTCP(t *testing.T) {
 			expectErr: nil,
 		},
 		{
-			name:      "dest does not exist source is file",
-			src:       "ark:/b5488",
-			dest:      "",
-			subpath:   "outerb5488.txt",
-			pairpath:  filepath.Join("b5", "48", "8", "b5488", "outerb5488.txt"),
-			expectErr: error_msgs.Err14,
-		},
-		{
 			name:      "dest is pairtree has subpath",
 			src:       "",
 			dest:      "ark:/b5488",
@@ -99,10 +91,7 @@ func TestPTCP(t *testing.T) {
 			var finalSrc string
 			var finalDest string
 			srcDir := testutils.CreateTempDir(t, fs)
-			destDir := ""
-			if test.name != "dest does not exist source is file" {
-				destDir = testutils.CreateTempDir(t, fs)
-			}
+			destDir := testutils.CreateTempDir(t, fs)
 			if test.src == "" {
 				//pairtree is the dest
 				testutils.CopyTestDirectory(t, testutils.TestPairtree, destDir)
@@ -111,7 +100,6 @@ func TestPTCP(t *testing.T) {
 				args = []string{root + destDir, fileInSrc, test.dest}
 				finalSrc = srcDir
 				finalDest = filepath.Join(destDir, rootDir, test.pairpath)
-
 			} else {
 				// pairtree is the src
 				testutils.CopyTestDirectory(t, testutils.TestPairtree, srcDir)
