@@ -39,8 +39,8 @@ func Run(args []string, writer io.Writer) error {
 	var err error
 
 	var rootCmd = &cobra.Command{
-		Use:   "ptcp -p [PT_ROOT] [ID] [/path/to/output]",
-		Short: "ptcp is a tool to copy files and folders in and out of the Pairtree",
+		Use:   "pt cp -p [PT_ROOT] [ID] [/path/to/output]",
+		Short: "pt cp is a tool to copy files and folders in and out of the Pairtree",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// If the root has not been set yet check the ENV vars
 			if ptRoot == "" {

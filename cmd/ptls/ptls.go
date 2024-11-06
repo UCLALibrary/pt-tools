@@ -57,8 +57,8 @@ func Run(args []string, writer io.Writer) error {
 	var pairPath string
 
 	var rootCmd = &cobra.Command{
-		Use:   "ptls -p [PT_ROOT] [FLAGS] [ID]",
-		Short: "ptls is a tool to list Pairtree object directories.",
+		Use:   "pt ls -p [PT_ROOT] [FLAGS] [ID]",
+		Short: "pt ls is a tool to list Pairtree object directories.",
 		Long:  "A tool to list contents of Pairtree object directories with various options.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// If the root has not been set yet check the ENV vars
