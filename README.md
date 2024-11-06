@@ -4,7 +4,11 @@ This is a Go command line program that will allow listing and interacting with a
 
 ## Installation
 
-First, ensure that you have Go Version 1.22 on you system. Clone this repository
+First, ensure that you have the latest Go version on you system. 
+
+### Build from Source
+
+Clone this repository
 
     git clone https://github.com/UCLALibrary/pt-tools.git
 
@@ -15,6 +19,20 @@ and run
 or to build and run tests and checkstyles use the command 
     
     make
+
+### Build with Homebrew
+
+Begin by tapping into our homebrew-pt-tools respository
+
+    brew tap UCLALibrary/homebrew-pt-tools
+
+Next, you'll need to install `pt-tools` on your system. Please ensure that there are no other programs named `pt-tools` installed, as this could lead to conflicts.
+
+    brew install pt-tools
+
+Pt-tools will now be installed and can be run with 
+    
+    pt-tools 
 
 ## ptnew
 
