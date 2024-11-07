@@ -16,9 +16,9 @@ or to build and run tests and checkstyles use the command
     
     make
 
-## new
+## pt new
 
-New is a tool that creates a new pairtree. The PAIRTREE_ROOT must be set either with an ENV PAIRTREE_ROOT or with a flag otherwise an error will be thrown. The PAIRTREE_ROOT may contain subdirectories, and if the directories do not exist, they will be created. Setting PARITREE_ROOT to `directory/innerdirectory` would be put the pairtree into `innerdirectory` contained inside of `directory`.
+Pt new is a tool that creates a new pairtree. The PAIRTREE_ROOT must be set either with an ENV PAIRTREE_ROOT or with a flag otherwise an error will be thrown. The PAIRTREE_ROOT may contain subdirectories, and if the directories do not exist, they will be created. Setting PARITREE_ROOT to `directory/innerdirectory` would be put the pairtree into `innerdirectory` contained inside of `directory`.
 
 The basic command when the ENV PAIRTREE_ROOT is not set
 
@@ -36,9 +36,9 @@ or
 
     pt new -x [PREFIX]
 
-## ls 
+## pt ls 
 
-Ls is a ls-like tool that can display the contents of the Pairtree object. The basic command is `pt ls [ID]` (when an ENV PAIRTREE_ROOT is set) or `pt ls [PT_ROOT] [ID]` with the output listing the contents of the Pairtree object directory. This pattern holds with all options of `pt ls` except `pt ls -h`. No flags need to be used, but all flags can be used depending on user needs.  
+Pt ls is a ls-like tool that can display the contents of the Pairtree object. The basic command is `pt ls [ID]` (when an ENV PAIRTREE_ROOT is set) or `pt ls [PT_ROOT] [ID]` with the output listing the contents of the Pairtree object directory. This pattern holds with all options of `pt ls` except `pt ls -h`. No flags need to be used, but all flags can be used depending on user needs.  
 
 The basic command is  
 
@@ -72,11 +72,11 @@ To output a recursive listing of the object direcotry, with the default being a 
 
     pt ls -r
 
-## cp
+## pt cp
 
-Cp is a cp-like tool that can copy files and folders in and out of the Pairtree structure. Unlike Linux's cp, the default is recursive. Pt cp's defualt behavior will also not overwrite files or directories if they already exist at the specificed location. Instead, it will add `.x` (x being an integer that starts from 1) to the path. 
+Pt cp is a cp-like tool that can copy files and folders in and out of the Pairtree structure. Unlike Linux's cp, the default is recursive. Pt cp's defualt behavior will also not overwrite files or directories if they already exist at the specificed location. Instead, it will add `.x` (x being an integer that starts from 1) to the path. 
 
-This cp tool behaves similarly to the unix cp in relation to directories. This means that when you are copying from `SRC` to `DEST` if the folder does not exist, the folder will be created and only the contents of the src will be copied into `DEST`. If the folder does exist, the folder and its contents from `SRC` will be moved into `DEST`. When wanting to copy into a subpath or new path in the pairtree, the `-n` flag will need to be used and is detailed below. At the moment the ability to copy from one pairtree to another pairtree is not available. 
+This pt cp tool behaves similarly to the unix cp in relation to directories. This means that when you are copying from `SRC` to `DEST` if the folder does not exist, the folder will be created and only the contents of the src will be copied into `DEST`. If the folder does exist, the folder and its contents from `SRC` will be moved into `DEST`. When wanting to copy into a subpath or new path in the pairtree, the `-n` flag will need to be used and is detailed below. At the moment the ability to copy from one pairtree to another pairtree is not available. 
 
 When an ENV PAIRTREE_ROOT is set, the basic command is
     
@@ -116,9 +116,9 @@ or
 
 This provides a way to archive an item from the pairtree and un-archive it again back into a pairtree structure, but it's not intended as a way to create archives within the pairtree structure. Only the entire object can be archived from the pairtree meaning the `-a` and `-n` flags should never be used together. When an object is archived, a `.tgz` file will be created and named after the Pairtree object. It will contain a folder that is named the object ID. Unless otherwise specific with the `-d` option, the `.x` pattern will be followed so as not to overwrite other existing `.tgz` files that are named the same. When unarchiving a file into the pairtree, the `.tgz` file should contain a folder named after the pairtree object. The contents of that folder will fully overwrite the contents in the pairtree object. 
 
-## mv
+## pt mv
 
-Mv is a mv-like tool that can move files in and out of the Pairtree structure. Mv operates similarly to cp except it is destructive, removing the "from" source and overwriting the "to" destination (so deleting the existing directory, if there is one). Mv only works on the directory/Pairtree object level and not at the level of files within the Pairtree object, so all sources and targets should represent directories instead of individual files. 
+Pt mv is a mv-like tool that can move files in and out of the Pairtree structure. Pt mv operates similarly to pt cp except it is destructive, removing the "from" source and overwriting the "to" destination (so deleting the existing directory, if there is one). Pt mv only works on the directory/Pairtree object level and not at the level of files within the Pairtree object, so all sources and targets should represent directories instead of individual files. 
 
 When an ENV PAIRTREE_ROOT, the basic command is
     
@@ -132,9 +132,9 @@ To produce a tar/gzipped output or upack a tar/gzipped in the pairtree structure
 
     pt mv -a [/path/to/ID.tgz] [ID]
 
-## rm
+## pt rm
 
-Rm is a rm-like tool that can delete things from within a Pairtree object or remove a Pairtree object altogether. There is also the ability to delete files and directories in the object as long as the subpath to that file or directory is provided. 
+Pt rm is a rm-like tool that can delete things from within a Pairtree object or remove a Pairtree object altogether. There is also the ability to delete files and directories in the object as long as the subpath to that file or directory is provided. 
 
 The basic command is 
 
