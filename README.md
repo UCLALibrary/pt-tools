@@ -1,6 +1,6 @@
 # pt-tools
 
-This is a Go command line program that will allow listing and interacting with a Pairtree without knowing anything about the Pairtree’s internal structure. When using pt-tools, we highly suggest utilizing a pairtree prefix for schemes such as `ark:/`. When not using a defined prefix, denote the pairtree ID with `pt://`, so an ID should look like `pt://ID`. This prefix will be stripped from an ID before interacting with  the pairtree. If no prefix is provided attached to the ID or `pt://` is not used, an error will be thrown.   
+This is a Go command line program that will allow listing and interacting with a Pairtree without the user knowing anything about the Pairtree’s internal structure. When using pt-tools, we highly suggest utilizing a pairtree prefix for schemes such as `ark:/`. When not using a defined prefix, denote the pairtree ID with `pt://`, so an ID should look like `pt://ID`. This prefix will be stripped from an ID before interacting with  the pairtree. If no prefix is provided attached to the ID or `pt://` is not used, an error will be thrown.   
 
 ## Installation
 
@@ -26,13 +26,13 @@ Begin by tapping into our homebrew-pt-tools respository
 
     brew tap UCLALibrary/homebrew-pt-tools
 
-Next, you'll need to install `pt-tools` on your system. Please ensure that there are no other programs named `pt-tools` installed, as this could lead to conflicts.
+Next, you'll need to install `pt` on your system. Please ensure that there are no other programs named `pt` are installed, as this could lead to conflicts.
 
-    brew install pt-tools
+    brew install UCLALibrary/homebrew-pt-tools/pt
 
 Pt-tools will now be installed and can be run with 
     
-    pt-tools 
+    pt 
 
 ## pt new
 

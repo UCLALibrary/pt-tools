@@ -1,6 +1,6 @@
 version: 2
 
-project_name: pt-tools
+project_name: pt
 
 before:
   hooks:
@@ -33,7 +33,7 @@ brews:
       name: homebrew-pt-tools
       token: "{{ .Env.PERSONAL_ACCESS_TOKEN }}"
     description: "CLI to interact with a Pairtree without knowing the internal structure"
-    name: "pt-tools"
+    name: "pt"
     homepage: "https://github.com/UCLALibrary/pt-tools"
     install: |
-      bin.install "pt-tools"
+      bin.install "pt"
