@@ -36,4 +36,4 @@ brews:
     name: "pt-tools"
     homepage: "https://github.com/UCLALibrary/pt-tools"
     install: |
-      bin.install "pt-tools"
+      bin.install "pt"

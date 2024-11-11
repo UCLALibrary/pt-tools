@@ -28,11 +28,11 @@ Begin by tapping into our homebrew-pt-tools respository
 
 Next, you'll need to install `pt-tools` on your system. Please ensure that there are no other programs named `pt-tools` installed, as this could lead to conflicts.
 
-    brew install pt-tools
+    brew install pt
 
 Pt-tools will now be installed and can be run with 
     
-    pt-tools 
+    pt 
 
 ## pt new
 

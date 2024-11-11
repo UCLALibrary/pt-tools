@@ -3,6 +3,9 @@ name: Release Pt-tools
 on:
   release:
     types: [ published ]
+  push:
+    branches:
+      - SERV-1173
 
 permissions:
   contents: write
