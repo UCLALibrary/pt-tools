@@ -25,27 +25,27 @@ func main() {
 	writer := os.Stdout
 
 	switch command {
-	case "ptls":
+	case "ls":
 		err := ptls.Run(args, writer)
 		if err != nil {
 			os.Exit(1)
 		}
-	case "ptrm":
+	case "rm":
 		err := ptrm.Run(args, writer)
 		if err != nil {
 			os.Exit(1)
 		}
-	case "ptcp":
+	case "cp":
 		err := ptcp.Run(args, writer)
 		if err != nil {
 			os.Exit(1)
 		}
-	case "ptmv":
+	case "mv":
 		err := ptmv.Run(args, writer)
 		if err != nil {
 			os.Exit(1)
 		}
-	case "ptnew":
+	case "new":
 		err := ptnew.Run(args, writer)
 		if err != nil {
 			os.Exit(1)

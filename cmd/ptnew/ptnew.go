@@ -38,8 +38,8 @@ func Run(args []string, writer io.Writer) error {
 	var err error
 
 	var rootCmd = &cobra.Command{
-		Use:   "ptcreate -p [PT_ROOT]",
-		Short: "ptcreate is a tool to create a Pairtree",
+		Use:   "pt new -p [PT_ROOT]",
+		Short: "pt new is a tool to create a Pairtree",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// If the root has not been set yet check the ENV vars
 			if ptRoot == "" {
