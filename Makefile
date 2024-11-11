@@ -1,5 +1,5 @@
 # Variables
-APP_NAME := pt-tools
+APP_NAME := pt
 PKG := ./...
 LINTER := golangci-lint run
 

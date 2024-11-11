@@ -34,8 +34,8 @@ func Run(args []string, writer io.Writer) error {
 	var err error
 
 	var rootCmd = &cobra.Command{
-		Use:   "ptmv [PT_ROOT] [ID] [/path/to/output/]",
-		Short: "Ptmv is a tool that can move files in and out of the Pairtree structure",
+		Use:   "pt mv [PT_ROOT] [ID] [/path/to/output/]",
+		Short: "Pt mv is a tool that can move files in and out of the Pairtree structure",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// If the root has not been set yet check the ENV vars
 			if ptRoot == "" {
