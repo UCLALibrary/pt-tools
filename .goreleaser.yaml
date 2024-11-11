@@ -1,6 +1,6 @@
 version: 2
 
-project_name: pt-tools
+project_name: pt
 
 before:
   hooks:
