@@ -26,3 +26,5 @@ go.work.sum
 
 # VSCode specific files
 .vscode/*
+
+dist/
