@@ -1,6 +1,6 @@
 module github.com/UCLALibrary/pt-tools
 
-go 1.23.3
+go 1.23.4
 
 require (
 	github.com/caltechlibrary/pairtree v1.0.4
