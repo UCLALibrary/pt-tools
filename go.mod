@@ -9,7 +9,7 @@ require (
 	github.com/otiai10/copy v1.14.1
 	github.com/spf13/afero v1.14.0
 	github.com/spf13/cobra v1.10.1
-	github.com/stretchr/testify v1.11.0
+	github.com/stretchr/testify v1.11.1
 	go.uber.org/zap v1.27.0
 )
 
